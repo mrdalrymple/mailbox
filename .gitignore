@@ -112,3 +112,6 @@ dmypy.json
 
 # vscode
 .vscode
+
+# local development
+run_local.ps1
