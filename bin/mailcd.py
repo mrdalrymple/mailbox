@@ -36,9 +36,36 @@ def app_init(settings):
             print(f"creating storage: {storage_root_path}")
             storage_root_path.mkdir(parents=True)
 
+def log_data_structure(data, display_name = None):
+    if display_name is not None:
+        print(f"{display_name}:")
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(data)
+
+def exec_inbox(inbox):
+    print(f"Executing Inbox")
+    log_data_structure(inbox, "inbox")
+    pass
+
+def exec_outbox(outbox):
+    print(f"Executing Outbox")
+    log_data_structure(outbox, "outbox")
+    pass
+
+def exec_stage(stage_name, stage):
+    print(f"Executing Stage: {stage_name}")
+    # TODO(Matthew): what if there is no inbox or outbox specified?
+    inbox = stage['inbox']
+    outbox = stage['outbox']
+
+    exec_inbox(inbox)
+
+    exec_outbox(outbox)
+
+    pass
+
 
 def main():
-    #print("Hello World")
     parser = argparse.ArgumentParser()
     parser.add_argument("project_dir")
     parser.add_argument("env_config")
@@ -69,21 +96,12 @@ def main():
 
     pipeline = load_yaml(pipeline_filepath)
 
-    #print(f"pipeline={pipeline}")
-    pp = pprint.PrettyPrinter(indent=2)
-    pp.pprint(pipeline)
+    #log_data_structure(pipeline)
 
     for stage_name in pipeline['stages'].keys():
-        #stage_name = stage[0]
-        print(f"STAGE: {stage_name}")
-        #pp.pprint(stage)
         stage = pipeline['stages'][stage_name]
-        inbox = stage['inbox']
-        outbox = stage['outbox']
-        print(f"inbox:")
-        pp.pprint(inbox)
-        print(f"outbox:")
-        pp.pprint(outbox)
+        exec_stage(stage_name, stage)
+
 
     return 0
 
