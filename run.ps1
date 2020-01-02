@@ -1,3 +1,4 @@
+(get-item $scriptPath ).parent
 
 Invoke-Expression ".\venv_init.ps1"
 
