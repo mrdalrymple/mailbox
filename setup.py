@@ -23,6 +23,11 @@ setup(
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=[
         ''
-    ]
+    ],
+    #scripts=['bin/mailcd.py']
+    entry_points={
+        'console_scripts': [
+            'mb = libmailcd:main'
+        ]
+    }
 )
-
