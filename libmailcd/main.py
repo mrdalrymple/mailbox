@@ -5,7 +5,7 @@ import os
 import argparse
 from pathlib import Path, PurePath
 import pprint
-
+import click
 import yaml
 
 import libmailcd
@@ -92,8 +92,9 @@ def exec_stage(config, stage_name, stage):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("project_dir")
-    parser.add_argument("env_config")
+    #parser.add_argument("project_dir")
+    parser.add_argument("--project_dir", dest='project_dir', default=".")
+    parser.add_argument("--env_config", dest='env_config', default="enva.yml")
     args = parser.parse_args()
 
     #print(f"arg(project_dir)={args.project_dir}")

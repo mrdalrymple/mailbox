@@ -22,7 +22,8 @@ setup(
 #    license=license,
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=[
-        ''
+        'pyyaml',
+        'click'
     ],
     #scripts=['bin/mailcd.py']
     entry_points={
