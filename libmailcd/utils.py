@@ -14,12 +14,45 @@
 
 # https://stackoverflow.com/questions/24937495/how-can-i-calculate-a-hash-for-a-filesystem-directory-using-python
 
-import hashlib
 import os
+import hashlib
+import zipfile
+
+
+def hash_file(filepath):
+    content_hash = hashlib.sha1()
+
+    if not os.path.exists(filepath):
+        return -1
+
+    # Note: This is a little bit differant that hash_directory
+    #  Need to check if file, as directories show up in the return file listing
+    if zipfile.is_zipfile(filepath):
+        with zipfile.ZipFile(filepath) as zfile:
+            for afile in zfile.infolist():
+                if not afile.is_dir():
+                    name = afile.filename
+
+                    # Hash file path (relative to package root)
+                    relfilepath_bytes = name.encode()
+                    relfilepath_sha = hashlib.sha1(relfilepath_bytes)
+                    content_hash.update(relfilepath_sha.digest())
+
+                    with zfile.open(name) as f:
+                        while True:
+                            buf = f.read(4096)
+                            if not buf:
+                                break
+                            mysha = hashlib.sha1(buf)
+                            content_hash.update(mysha.digest())
+
+
+    return content_hash.hexdigest()
 
 def hash_directory(directory):
-    SHAhash = hashlib.sha1()
-    if not os.path.exists (directory):
+    content_hash = hashlib.sha1()
+
+    if not os.path.exists(directory):
         return -1
 
     # TODO(matthew): create file list first, then sort, then read for hashing
@@ -33,9 +66,10 @@ def hash_directory(directory):
             filepath = os.path.join(root,filename)
 
             # Hash file path (relative to package root)
+            relfilepath = relfilepath.replace('\\', '/') # make sure file separator is consistent across os'
             relfilepath_bytes = relfilepath.encode()
             relfilepath_sha = hashlib.sha1(relfilepath_bytes)
-            SHAhash.update(relfilepath_sha.digest())
+            content_hash.update(relfilepath_sha.digest())
 
             # Hash file contents
             if os.path.isfile(filepath):
@@ -48,6 +82,6 @@ def hash_directory(directory):
                         mysha = hashlib.sha1(buf)
 
                         digest = mysha.digest()
-                        SHAhash.update(digest)
+                        content_hash.update(digest)
 
-    return SHAhash.hexdigest()
+    return content_hash.hexdigest()

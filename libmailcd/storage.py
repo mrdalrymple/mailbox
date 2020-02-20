@@ -42,22 +42,35 @@ def get(sid=None):
 def add(storage_id, package):
     # calculate hash
 
-    dir_hash = libmailcd.utils.hash_directory(package)
+    # Directory vs Zip file
+    # TODO(matthew): This looks like it could be refactored for code re-use here
+    if os.path.isdir(package):
+        package_hash = libmailcd.utils.hash_directory(package)
+        print(f"package_hash={package_hash}")
+        # lookup hash in store
+        ## return out if already exists
+        if _exists(storage_id, package_hash):
+            print(f"Already exists")
+            return
+        # create space in store (cleanup on failure? thinking yes)
+        _create(storage_id, package_hash)
 
-    print(f"dir_hash={dir_hash}")
+        # if directory, zip up
+        # move zip to store (maybe do this with zip up step, so dont have to worry about where to temp put zip)
+        _archive(storage_id, package_hash, package)
+    else:
+        package_hash = libmailcd.utils.hash_file(package)
+        print(f"package_hash={package_hash}")
+        # lookup hash in store
+        ## return out if already exists
+        if _exists(storage_id, package_hash):
+            print(f"Already exists")
+            return
+        # create space in store (cleanup on failure? thinking yes)
+        _create(storage_id, package_hash)
 
-    # lookup hash in store
-    ## return out if already exists
-    if _exists(storage_id, dir_hash):
-        print(f"Already exists")
-        return
+        _save(storage_id, package_hash, package)
 
-    # create space in store (cleanup on failure? thinking yes)
-    _create(storage_id, dir_hash)
-
-    # if directory, zip up
-    # move zip to store (maybe do this with zip up step, so dont have to worry about where to temp put zip)
-    _archive(storage_id, dir_hash, package)
 
     # TODO(matthew): What if it's some other compressed archive format?
 
@@ -69,20 +82,29 @@ def add(storage_id, package):
 
 ########################################
 
-def _archive(storage_id, dir_hash, package):
+def _archive(storage_id, package_hash, package):
     output_filename = os.path.basename(Path(package))
-    output_file_path = Path(STORAGE_ROOT, storage_id, dir_hash, output_filename)
+    output_file_path = Path(STORAGE_ROOT, storage_id, package_hash, output_filename)
     print(f"archiving: {output_file_path}")
-    print(f"output_filename={output_filename}")
+    #print(f"output_filename={output_filename}")
     shutil.make_archive(output_file_path, 'zip', root_dir=package)
     pass
 
-def _exists(storage_id, dir_hash):
+def _save(storage_id, package_hash, package):
+    output_filename = os.path.basename(Path(package))
+    output_file_path = Path(STORAGE_ROOT, storage_id, package_hash, output_filename)
+    shutil.copyfile(package, output_file_path)
+    print(f"archiving: {output_file_path}")
     pass
 
-def _create(storage_id, dir_hash):
+def _exists(storage_id, package_hash):
+    # TODO(matthew): check that at least one (zip) file exists in this directory
+    path = Path(STORAGE_ROOT, storage_id, package_hash)
+    return os.path.exists(path)
+
+def _create(storage_id, package_hash):
     # TODO(Matthew): what is an id (spec/format of one)? do I need to pass around a clean up version (like spaces to _)?
-    path = Path(STORAGE_ROOT, storage_id, dir_hash)
+    path = Path(STORAGE_ROOT, storage_id, package_hash)
     os.makedirs(path, exist_ok=True)
     print(f"created: {storage_id} -- {path}")
 
