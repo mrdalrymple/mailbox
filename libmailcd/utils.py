@@ -17,21 +17,32 @@
 import hashlib
 import os
 
-def hash_directory(directory, verbose=0):
+def hash_directory(directory):
     SHAhash = hashlib.sha1()
     if not os.path.exists (directory):
         return -1
 
-    for root, dirs, files in os.walk(directory):
+    # TODO(matthew): create file list first, then sort, then read for hashing
+    #  What is the impact for packaging something with lots of files?
+    for root, _, files in os.walk(directory):
         for filename in sorted(files):
-            if verbose == 1:
-                print('Hashing', filename)
+
+            # Calculate various paths required
+            reldir = os.path.relpath(root, directory)
+            relfilepath = os.path.join(reldir, filename)
             filepath = os.path.join(root,filename)
+
+            # Hash file path (relative to package root)
+            relfilepath_bytes = relfilepath.encode()
+            relfilepath_sha = hashlib.sha1(relfilepath_bytes)
+            SHAhash.update(relfilepath_sha.digest())
+
+            # Hash file contents
             if os.path.isfile(filepath):
-                with open(filepath, 'rb') as f1:
+                with open(filepath, 'rb') as f:
                     while True:
                         # Read file in as little chunks
-                        buf = f1.read(4096)
+                        buf = f.read(4096)
                         if not buf:
                             break
                         mysha = hashlib.sha1(buf)
