@@ -1,2 +1,2 @@
 from .core import hmm
-from .main import main
+from .main import cli

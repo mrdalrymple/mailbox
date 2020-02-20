@@ -9,6 +9,7 @@ import click
 import yaml
 
 import libmailcd
+import libmailcd.storage
 
 ########################################
 
@@ -26,10 +27,6 @@ def load_yaml(yaml_file):
             print(exc)
 
     return contents
-
-def get_artifact_storage_root():
-    return str(Path(Path.home(), ".mailcd", "storage"))
-
 
 def app_init(settings):
     if settings['storage_root'] is not None:
@@ -90,18 +87,64 @@ def exec_stage(config, stage_name, stage):
 
 ########################################
 
+
+@click.group()
+def cli():
+    pass
+
+@cli.group()
+def storage():
+    #print("STORAGE")
+    pass
+
+# TODO(Matthew): we are not actually supporting package being a zip yet
+#  There are complications: how do we do the hash calculation?  Might need to extract out everything first.
+#  Maybe the other route is to zip up a directory, and then hash it
+#  I like hashing the contents rather than the zip, so it's the contents that have a hash, and
+#   how they are compressed isn't even a part of that discussion
+@storage.command("add")
+@click.argument("sid")
+@click.argument("package", type=click.Path(exists=True)) # can be zip or directory
+def storage_add(sid, package):
+    print(f"add({sid}, {package})")
+    libmailcd.storage.add(sid, package)
+    pass
+
+@storage.command("list")
+@click.argument("sid", default=None, required=False)
+def storage_list(sid):
+    if sid:
+        versions = libmailcd.storage.get(sid)
+        for version in versions:
+            print(f"{version}")
+
+        if not versions:
+            print(f"{sid} - No entries")
+    else:
+        storage_ids = libmailcd.storage.get()
+
+        for sid in storage_ids:
+            print(f"{sid}")
+        
+        if not storage_ids:
+            print(f"Nothing currently stored")
+
+    pass
+
+
 def main():
     parser = argparse.ArgumentParser()
-    #parser.add_argument("project_dir")
+
     parser.add_argument("--project_dir", dest='project_dir', default=".")
     parser.add_argument("--env_config", dest='env_config', default="enva.yml")
+
     args = parser.parse_args()
 
     #print(f"arg(project_dir)={args.project_dir}")
     #print(f"arg(env_config)={args.env_config}")
 
     settings = {}
-    settings['storage_root'] = get_artifact_storage_root()
+    settings['storage_root'] = libmailcd.storage.get_artifact_storage_root()
 
     app_init(settings)
 
@@ -139,7 +182,9 @@ def main():
 
 ########################################
 
-if __name__ == "__main__":
-    sys.exit(main())
+########################################
+
+#if __name__ == "__main__":
+#    sys.exit(main())
 
 
