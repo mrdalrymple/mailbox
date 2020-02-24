@@ -85,3 +85,22 @@ def hash_directory(directory):
                         content_hash.update(digest)
 
     return content_hash.hexdigest()
+
+########################################
+
+import yaml
+
+def load_yaml(yaml_file):
+    contents = {}
+
+    with open(yaml_file, 'r') as stream:
+        try:
+            contents = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+    return contents
+
+def save_yaml(yaml_file, data):
+    with open(yaml_file, 'w') as stream:
+        yaml.dump(data, stream, default_flow_style=False)

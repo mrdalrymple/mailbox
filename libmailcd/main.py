@@ -6,27 +6,16 @@ import argparse
 from pathlib import Path, PurePath
 import pprint
 import click
-import yaml
 
 import libmailcd
 import libmailcd.storage
+import libmailcd.utils
 
 ########################################
 
 INSOURCE_PIPELINE_FILENAME = 'pipeline.yml'
 
 ########################################
-
-def load_yaml(yaml_file):
-    contents = {}
-
-    with open(yaml_file, 'r') as stream:
-        try:
-            contents = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-
-    return contents
 
 def app_init(settings):
     if settings['storage_root'] is not None:
@@ -133,6 +122,7 @@ def cli_storage_list(sid):
 
 #mb storage label LUA/acdef
 #mb storage label LUA acdef
+# TODO(matthew): Look into auto completion (https://stackoverflow.com/questions/187621/how-to-make-a-python-command-line-program-autocomplete-arbitrary-things-not-int)
 @cli_storage.command("label")
 @click.argument("ref")
 @click.argument("label", default=None, required=False)
@@ -140,7 +130,12 @@ def cli_storage_label(ref, label):
     storage_id, package_hash = libmailcd.storage.split_ref(ref)
     print(f"sid={storage_id}, hash={package_hash}")
     if storage_id and package_hash:
-        libmailcd.storage.label(storage_id, package_hash, label)
+        if label:
+            libmailcd.storage.label(storage_id, package_hash, label)
+        else:
+            labels = libmailcd.storage.get_labels(storage_id, package_hash)
+            for label in labels:
+                print(f"{label}")
     elif storage_id:
         versions = libmailcd.storage.get(storage_id)
         for version in versions:
@@ -175,7 +170,7 @@ def main():
     #print(f"arg_project_dir={arg_project_dir}")
     #print(f"arg_env_config={arg_env_config}")
 
-    env = load_yaml(arg_env_config)
+    env = libmailcd.utils.load_yaml(arg_env_config)
 
     config = {
         'settings': settings,
@@ -190,7 +185,7 @@ def main():
 
     #print(f"pipeline_filepath={pipeline_filepath}")
 
-    pipeline = load_yaml(pipeline_filepath)
+    pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
 
     #log_data_structure(pipeline)
 
