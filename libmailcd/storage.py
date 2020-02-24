@@ -71,16 +71,26 @@ def add(storage_id, package):
 
         _save(storage_id, package_hash, package)
 
-
     # TODO(matthew): What if it's some other compressed archive format?
-
-
-
-
     pass
+
+def label(storage_id, package_hash, label):
+    pass
+
+def split_ref(ref):
+    return ref.split('/')
 
 
 ########################################
+
+def _get_ref_matches(ref):
+    matches = []
+    sid, phash = split_ref(ref)
+    if sid and phash:
+        pass
+
+    return matches
+
 
 def _archive(storage_id, package_hash, package):
     output_filename = os.path.basename(Path(package))

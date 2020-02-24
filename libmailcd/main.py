@@ -92,28 +92,27 @@ def exec_stage(config, stage_name, stage):
 def cli():
     pass
 
-@cli.group()
-def storage():
-    #print("STORAGE")
+@cli.group("storage", invoke_without_command=True)
+@click.pass_context
+def cli_storage(ctx):
+    # If no subcommand specified, default to 'list'
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(cli_storage_list)
     pass
 
-# TODO(Matthew): we are not actually supporting package being a zip yet
-#  There are complications: how do we do the hash calculation?  Might need to extract out everything first.
-#  Maybe the other route is to zip up a directory, and then hash it
-#  I like hashing the contents rather than the zip, so it's the contents that have a hash, and
-#   how they are compressed isn't even a part of that discussion
-@storage.command("add")
+@cli_storage.command("add")
 @click.argument("sid")
 @click.argument("package", type=click.Path(exists=True)) # can be zip or directory
-def storage_add(sid, package):
+def cli_storage_add(sid, package):
     print(f"add({sid}, {package})")
     libmailcd.storage.add(sid, package)
     pass
 
-@storage.command("list")
+@cli_storage.command("list")
 @click.argument("sid", default=None, required=False)
-def storage_list(sid):
+def cli_storage_list(sid):
     if sid:
+        sid = sid.upper()
         versions = libmailcd.storage.get(sid)
         for version in versions:
             print(f"{version}")
@@ -132,6 +131,28 @@ def storage_list(sid):
     pass
 
 
+#mb storage label LUA/acdef
+#mb storage label LUA acdef
+@cli_storage.command("label")
+@click.argument("ref")
+@click.argument("label", default=None, required=False)
+def cli_storage_label(ref, label):
+    storage_id, package_hash = libmailcd.storage.split_ref(ref)
+    print(f"sid={storage_id}, hash={package_hash}")
+    if storage_id and package_hash:
+        libmailcd.storage.label(storage_id, package_hash, label)
+    elif storage_id:
+        versions = libmailcd.storage.get(storage_id)
+        for version in versions:
+            print(f"{version}")
+
+        if not versions:
+            print(f"{storage_id} - No entries")
+    pass
+
+
+# NOTE(matthew): This can eventually be removed after completed ported to click.
+#  Need to see where all this code fits in.
 def main():
     parser = argparse.ArgumentParser()
 
@@ -181,10 +202,3 @@ def main():
     return 0
 
 ########################################
-
-########################################
-
-#if __name__ == "__main__":
-#    sys.exit(main())
-
-
