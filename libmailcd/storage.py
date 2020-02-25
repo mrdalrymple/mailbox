@@ -135,20 +135,29 @@ def get_labels(storage_id, package_hash):
 
     return labels
 
+########################################
 
 def split_ref(ref):
     return ref.split('/')
 
-
-########################################
-
-def _get_ref_matches(ref):
+def get_ref_matches(ref):
     matches = []
     sid, phash = split_ref(ref)
     if sid and phash:
-        pass
+        matches = get_package_hash_matches(sid, phash)
 
     return matches
+
+def get_package_hash_matches(storage_id, partial_package_hash):
+    matches = []
+
+    full_matches = Path(STORAGE_ROOT, storage_id).glob(partial_package_hash + "*")
+    for m in full_matches:
+        matches.append(m.name)
+
+    return list(matches)
+
+########################################
 
 
 def _archive(storage_id, package_hash, package):

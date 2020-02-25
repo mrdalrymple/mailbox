@@ -127,15 +127,26 @@ def cli_storage_list(sid):
 @click.argument("ref")
 @click.argument("label", default=None, required=False)
 def cli_storage_label(ref, label):
-    storage_id, package_hash = libmailcd.storage.split_ref(ref)
-    print(f"sid={storage_id}, hash={package_hash}")
-    if storage_id and package_hash:
-        if label:
-            libmailcd.storage.label(storage_id, package_hash, label)
+    storage_id, partial_package_hash = libmailcd.storage.split_ref(ref)
+    #print(f"sid={storage_id}, pphash={partial_package_hash}")
+    if storage_id and partial_package_hash:
+        matches = libmailcd.storage.get_package_hash_matches(storage_id, partial_package_hash)
+        if len(matches) == 1:
+            package_hash = matches[0]
+
+            if label:
+                libmailcd.storage.label(storage_id, package_hash, label)
+            else:
+                print(f"{storage_id}/{package_hash}:")
+                labels = libmailcd.storage.get_labels(storage_id, package_hash)
+                for label in labels:
+                    print(f"  {label}")
+                else:
+                    print("  No labels defined")
         else:
-            labels = libmailcd.storage.get_labels(storage_id, package_hash)
-            for label in labels:
-                print(f"{label}")
+            print("Multiple matches found:")
+            for m in matches:
+                print(f"  {m}")
     elif storage_id:
         versions = libmailcd.storage.get(storage_id)
         for version in versions:
