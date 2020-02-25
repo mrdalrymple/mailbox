@@ -88,6 +88,13 @@ def hash_directory(directory):
 
 ########################################
 
+import re
+
+def is_hex(s):
+    return re.fullmatch(r"^[0-9a-fA-F]+$", s or "") is not None
+
+########################################
+
 import yaml
 
 def load_yaml(yaml_file):

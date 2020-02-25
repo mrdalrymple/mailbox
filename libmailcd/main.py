@@ -139,8 +139,9 @@ def cli_storage_label(ref, label):
             else:
                 print(f"{storage_id}/{package_hash}:")
                 labels = libmailcd.storage.get_labels(storage_id, package_hash)
-                for label in labels:
-                    print(f"  {label}")
+                if labels:
+                    for label in labels:
+                        print(f"  {label}")
                 else:
                     print("  No labels defined")
         else:

@@ -37,7 +37,16 @@ def get(sid=None):
     if sid:
         path = Path(path, sid)
 
-    files = os.listdir(path)
+    raw_files = os.listdir(path)
+
+    # Parse out any files that not package hashes
+    # TODO(matthew): This has to be done because of the database file, is there
+    #  a better spot we can put that file? Better way to filter it out?
+    files = []
+    for rf in raw_files:
+        if libmailcd.utils.is_hex(rf):
+            files.append(rf)
+
     return files
 
 def add(storage_id, package):
@@ -100,6 +109,9 @@ def label(storage_id, package_hash, label):
         db = {}
 
     # add label (noop if already exists)
+    # NOTE(matthew): This might be more complex than needed.  Might just need a
+    #  1:1 mapping of label to package, as query by a label should return only
+    #  one package.
     if not full_package_hash in db:
         db[full_package_hash] = {}
         db[full_package_hash]["labels"] = []
