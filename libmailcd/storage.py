@@ -44,7 +44,11 @@ def get(sid=None):
     #  a better spot we can put that file? Better way to filter it out?
     files = []
     for rf in raw_files:
-        if libmailcd.utils.is_hex(rf):
+        should_get = True
+        if sid and not libmailcd.utils.is_hex(rf):
+            should_get = False
+
+        if should_get:
             files.append(rf)
 
     return files
