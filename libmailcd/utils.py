@@ -88,6 +88,28 @@ def hash_directory(directory):
 
 ########################################
 
+# TODO(matthew): filter down based on relpath, currently lists all files (using path)
+#  Maybe current way is what we want... unless zip file has many files
+#  What would that threshold be? i.e. if more than 10 files, only show what's in topdir
+#   unless relpath specified? Then turn it into a full ls-style implementation
+def zip_ls(filepath, relpath = None):
+    files = []
+
+    with zipfile.ZipFile(filepath, 'r') as zip: 
+        #zip.printdir()
+        #files = zip.namelist()
+        infolist = zip.infolist()
+
+    for fileinfo in infolist:
+        files.append({
+            "name" : fileinfo.filename,
+            "size" : fileinfo.file_size
+        })
+
+    return files
+
+########################################
+
 import re
 
 def is_hex(s):

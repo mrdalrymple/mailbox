@@ -85,6 +85,102 @@ def cli():
     app_init(settings)
     pass
 
+
+# TODO:(matthew) handle the output
+@cli.command("store")
+@click.argument("ref", default=None, required=False)
+@click.option("--label")
+def cli_store(ref, label):
+    # Case: mb store
+    #  Should show list of all storage IDs
+    if not ref:
+        storage_ids = libmailcd.storage.get()
+
+        for sid in storage_ids:
+            print(f"{sid}")
+        
+        if not storage_ids:
+            print(f"Nothing currently stored")
+        sys.exit(0)
+
+    # split the ref
+    try:
+        storage_id, partial_package_hash = libmailcd.storage.split_ref(ref)
+    except ValueError:
+        storage_id = ref
+        partial_package_hash = None
+
+    # Case: mb store SID
+    #  Should list all packages/versions for storage id
+    if storage_id and not partial_package_hash:
+        sid = storage_id.upper()
+        versions = libmailcd.storage.get(sid)
+        for version in versions:
+            print(f"{version}")
+
+        if not versions:
+            print(f"{sid} - No entries")
+        sys.exit(0)
+        pass
+    
+    # Case: mb store SID/2de
+    #  Should list the contents of the zip file
+    #  Should show package metadata
+    # Case: mb store SID/2de/...
+    #  Should keep navigating through the zip file
+    if storage_id and partial_package_hash:
+        # fully qualify the ref
+        try:
+            package_hash = libmailcd.storage.get_fully_qualified_package_hash(storage_id, partial_package_hash)
+        except ValueError as e:
+            # Case: mb store SID/2de -- has more than one result
+            #  Should stop here and list all found matches
+            print(f"{e}")
+            matches = libmailcd.storage.get_package_hash_matches(storage_id, partial_package_hash)
+            for m in matches:
+                print(f"{m}")
+            sys.exit(0)
+
+        # Add any label specified
+        if label:
+            try:
+                libmailcd.storage.label(storage_id, package_hash, label)
+                print(f"Label '{label}' added successfully...\n")
+            except ValueError as e:
+                # Currently: Ignore if label already exists
+                # Should we: Uncomment below if we want to let user know that
+                #print(f"{e}")
+                pass
+
+        # get contents of the package
+        package_fileinfos = libmailcd.storage.ls(storage_id, package_hash)
+        # get metadata of the package
+        package_labels = libmailcd.storage.get_labels(storage_id, package_hash)
+
+        # list the metadata (labels)
+        print(f"Metadata")
+        print(f"====================\n")
+        print("Labels:")
+        if package_labels:
+            for label in package_labels:
+                print(f"{label}")
+        else:
+            print("No labels.")
+        
+        # list the contents of the package
+        # TODO(matthew): Clean up the output of this, it's not well aligned or easy to view
+        print(f"")
+        print(f"Contents")
+        print(f"====================\n")
+        if package_fileinfos:
+            print(f"File Name\t\t\tStats")
+        for fileinfo in package_fileinfos:
+            to_show = fileinfo.copy()
+            if 'name' in to_show:
+                del to_show['name']
+            print(f"{fileinfo['name']}\t\t{to_show}")
+    pass
+
 @cli.group("storage", invoke_without_command=True)
 @click.pass_context
 def cli_storage(ctx):
@@ -122,6 +218,7 @@ def cli_storage_list(sid):
             print(f"Nothing currently stored")
 
     pass
+
 
 
 #mb storage label LUA/acdef

@@ -28,8 +28,12 @@ def load_yaml(yaml_file):
 
     return contents
 
+########################################
+
 def get_artifact_storage_root():
     return STORAGE_ROOT
+
+########################################
 
 def get(sid=None):
     path = Path(STORAGE_ROOT)
@@ -88,7 +92,28 @@ def add(storage_id, package):
     # TODO(matthew): What if it's some other compressed archive format?
     pass
 
+########################################
+
+def ls(storage_id, package_hash, relpath = None):
+    # get file for package_hash
+    filepath = _get_archive(storage_id, package_hash)
+
+    # ls file
+    return libmailcd.utils.zip_ls(filepath, relpath)
+
+########################################
+
+
 def label(storage_id, package_hash, label):
+    labels = get_labels(storage_id, package_hash)
+
+    if label in labels:
+        raise ValueError(f"Label '{label}' already exists")
+
+    add_label(storage_id, package_hash, label)
+    pass
+
+def add_label(storage_id, package_hash, label):
     # TODO(matthew): Do we need to validate that storage_id exists first, or can we make the assumption it
     #  does?
 
@@ -101,7 +126,7 @@ def label(storage_id, package_hash, label):
     #  for a package via a label later.
     db_file_path = Path(STORAGE_ROOT, storage_id, STORAGE_DB_FILENAME)
 
-    #db = {}
+    db = None
 
     # load db if one currently exists
     
@@ -173,8 +198,20 @@ def get_package_hash_matches(storage_id, partial_package_hash):
 
     return list(matches)
 
+# TODO(Matthew): because of the exception raise, should this logic go into the CLI as helper function there?
+def get_fully_qualified_package_hash(storage_id, partial_package_hash):
+    matches = libmailcd.storage.get_package_hash_matches(storage_id, partial_package_hash)
+    if len(matches) != 1:
+        raise ValueError(f"More than one result for: {partial_package_hash}")
+
+    package_hash = matches[0]
+
+    return package_hash
+
 ########################################
 
+# Note: these methods are a layer around the actual file system structure
+#  They all use STORAGE_ROOT
 
 def _archive(storage_id, package_hash, package):
     output_filename = os.path.basename(Path(package))
@@ -201,6 +238,21 @@ def _create(storage_id, package_hash):
     path = Path(STORAGE_ROOT, storage_id, package_hash)
     os.makedirs(path, exist_ok=True)
     print(f"created: {storage_id} -- {path}")
+
+def _get_archive(storage_id, package_hash):
+    package_root = Path(STORAGE_ROOT, storage_id, package_hash)
+    # what zip exists here?
+    files = os.listdir(package_root)
+
+    # TODO(matthew): should error out if more than one file found here
+    #  I don't know what to show to the user or how they would fix it, this is an interanl error
+    #  where someone messed up the backend structure... we could add more logic here to find the package with
+    #  the same hash and use that zip.  If multiple zips have same hash, do we just pick one? or error?
+    #  We could probably just pick one... but let's see if this error ever happens in the wild!
+
+    # For now, just return the first file found
+    # TODO(matthew): what if no files found?
+    return Path(package_root, files[0])
 
 
 ########################################
