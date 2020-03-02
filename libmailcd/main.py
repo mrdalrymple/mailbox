@@ -79,6 +79,10 @@ def exec_stage(config, stage_name, stage):
 
 @click.group()
 def cli():
+    settings = {}
+    settings['storage_root'] = libmailcd.storage.get_artifact_storage_root()
+
+    app_init(settings)
     pass
 
 @cli.group("storage", invoke_without_command=True)
