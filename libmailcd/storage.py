@@ -58,11 +58,12 @@ def get(sid=None):
     return files
 
 def add(storage_id, package):
-    # calculate hash
+    package_hash = None
 
     # Directory vs Zip file
     # TODO(matthew): This looks like it could be refactored for code re-use here
     if os.path.isdir(package):
+        # calculate hash
         package_hash = libmailcd.utils.hash_directory(package)
         print(f"package_hash={package_hash}")
         # lookup hash in store
@@ -77,6 +78,7 @@ def add(storage_id, package):
         # move zip to store (maybe do this with zip up step, so dont have to worry about where to temp put zip)
         _archive(storage_id, package_hash, package)
     else:
+        # calculate hash
         package_hash = libmailcd.utils.hash_file(package)
         print(f"package_hash={package_hash}")
         # lookup hash in store
@@ -90,7 +92,9 @@ def add(storage_id, package):
         _save(storage_id, package_hash, package)
 
     # TODO(matthew): What if it's some other compressed archive format?
-    pass
+
+    # Return the generated package_hash for reference
+    return package_hash
 
 ########################################
 

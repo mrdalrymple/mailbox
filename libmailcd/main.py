@@ -77,6 +77,8 @@ def exec_stage(config, stage_name, stage):
 ########################################
 
 
+
+
 @click.group()
 def cli():
     settings = {}
@@ -86,11 +88,37 @@ def cli():
     pass
 
 
+@cli.group("store", invoke_without_command=True)
+@click.pass_context
+def cli_store(ctx):
+    # If no subcommand specified, default to 'ls'
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(cli_store_ls)
+    pass
+
+@cli_store.command("add")
+@click.argument("storage_id")
+@click.argument("package", type=click.Path(exists=True))  # can be zip or directory
+def cli_store_add(storage_id, package):
+    """Add a PACKAGE (directory or zip file) to a specified location (STORAGE_ID).
+
+    Example(s):
+
+        mb store add MYPACKAGE ./mypackage_v2.zip
+
+        mb store add MYPACKAGE ./mypackage_v3/
+
+    """
+    package_hash = libmailcd.storage.add(storage_id, package)
+    # todo(matthew): we need the package hash here does storage.add return that?
+    print(f"Package added under store '{storage_id}' ({package_hash})")
+    pass
+
 # TODO:(matthew) handle the output
-@cli.command("store")
+@cli_store.command("ls")
 @click.argument("ref", default=None, required=False)
 @click.option("--label")
-def cli_store(ref, label):
+def cli_store_ls(ref, label):
     # Case: mb store
     #  Should show list of all storage IDs
     if not ref:
