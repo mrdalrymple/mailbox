@@ -131,7 +131,11 @@ def cli_storage_list(sid):
 @click.argument("ref")
 @click.argument("label", default=None, required=False)
 def cli_storage_label(ref, label):
-    storage_id, partial_package_hash = libmailcd.storage.split_ref(ref)
+    try:
+        storage_id, partial_package_hash = libmailcd.storage.split_ref(ref)
+    except ValueError:
+        storage_id = ref
+        partial_package_hash = None
     #print(f"sid={storage_id}, pphash={partial_package_hash}")
     if storage_id and partial_package_hash:
         matches = libmailcd.storage.get_package_hash_matches(storage_id, partial_package_hash)
