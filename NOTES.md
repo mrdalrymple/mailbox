@@ -61,3 +61,16 @@ mb storage label LUA/acdef
 
 mb storage LUA/acdef/2de/Bin/ --rmlabel 
 
+
+# TODOs
+
+These should be user stories, but I don't know if I want to put in that effort right now.
+So either, write stories for these TODOs, or just do them:
+
+- Add ability to remove a package from the store
+- Add ability to pull a package into a local workspace (in $cwd/.mb/storage)
+- Add ability to cleanup current working directory
+ - clean all of $cwd/.mb?
+ - clean just $cwd/.mb/storage?
+ - If $cwd/.mb is empty, why not just remove whole folder on clean?
+ - Possible command: `mb clean` (or does it need to be `mb build clean`?)
