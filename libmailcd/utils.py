@@ -108,6 +108,10 @@ def zip_ls(filepath, relpath = None):
 
     return files
 
+def zip_extract(filepath, target_path):
+    with zipfile.ZipFile(filepath, 'r') as zip_ref:
+        zip_ref.extractall(target_path)
+
 ########################################
 
 import re

@@ -209,6 +209,57 @@ def cli_store_ls(ref, label):
             print(f"{fileinfo['name']}\t\t{to_show}")
     pass
 
+@cli_store.command("get")
+@click.argument("ref")
+def cli_store_get(ref):
+    """Get a PACKAGE from the specified REF.
+
+    Example(s):
+
+        mb store get MYPACKAGE/2de
+
+        mb store get MYPACKAGE best version ever
+
+        ???mb store get MYPACKAGE/2de best version ever???
+
+        mb store get MYPACKAGE --label best version ever
+
+    """
+    try:
+        storage_id, partial_package_hash = libmailcd.storage.split_ref(ref)
+    except ValueError:
+        storage_id = ref
+        partial_package_hash = None
+
+    # Case: storage id and package hash
+    if storage_id and partial_package_hash:
+        # fully qualify the ref
+        try:
+            package_hash = libmailcd.storage.get_fully_qualified_package_hash(storage_id, partial_package_hash)
+        except ValueError as e:
+            # Case: mb store get SID/2de -- has more than one result
+            #  Should stop here and list all found matches
+            print(f"{e}")
+            matches = libmailcd.storage.get_package_hash_matches(storage_id, partial_package_hash)
+            for m in matches:
+                print(f"{m}")
+            sys.exit(0)
+
+        # need a current workspace (cwd)
+        # calculate target directory
+        target_relpath = Path(".mb", "storage", storage_id, package_hash)
+        target_path = Path(Path.cwd(), target_relpath)
+
+        # find package
+        libmailcd.storage.download(storage_id, package_hash, target_path)
+        print(f"Package downloaded: '{target_relpath}'")
+    # Case: storage id and label list
+    else:
+        pass
+
+
+########################################
+
 @cli.group("storage", invoke_without_command=True)
 @click.pass_context
 def cli_storage(ctx):

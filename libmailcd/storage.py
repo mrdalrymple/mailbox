@@ -36,6 +36,9 @@ def get_artifact_storage_root():
 ########################################
 
 def get(sid=None):
+    """Get the list packages for a given storage ID, if nothing supplied, return the
+    list of storage IDs.
+    """
     path = Path(STORAGE_ROOT)
 
     if sid:
@@ -95,6 +98,16 @@ def add(storage_id, package):
 
     # Return the generated package_hash for reference
     return package_hash
+
+def download(storage_id, package_hash, target_path):
+    """Download a specified package into the specified target path (probably cwd)
+    """
+    # get file for package_hash
+    package_path = _get_archive(storage_id, package_hash)
+
+    os.makedirs(target_path, exist_ok=True)
+
+    libmailcd.utils.zip_extract(package_path, target_path)
 
 ########################################
 
