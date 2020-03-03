@@ -211,18 +211,15 @@ def cli_store_ls(ref, label):
 
 @cli_store.command("get")
 @click.argument("ref")
-def cli_store_get(ref):
-    """Get a PACKAGE from the specified REF.
+@click.argument("labels", nargs=-1)
+def cli_store_get(ref, labels):
+    """Get a PACKAGE from the specified REF, that have any of the specified LABELS.
 
     Example(s):
 
         mb store get MYPACKAGE/2de
 
         mb store get MYPACKAGE best version ever
-
-        ???mb store get MYPACKAGE/2de best version ever???
-
-        mb store get MYPACKAGE --label best version ever
 
     """
     try:
@@ -231,8 +228,14 @@ def cli_store_get(ref):
         storage_id = ref
         partial_package_hash = None
 
+    # Case: Invalid storage id
+    # TODO(matthew): validate storage id here... checking for not null is not correct
+    if not storage_id:
+        print(f"Invalid REF: {ref} (no storage id found)")
+        sys.exit(1)
+
     # Case: storage id and package hash
-    if storage_id and partial_package_hash:
+    if partial_package_hash:
         # fully qualify the ref
         try:
             package_hash = libmailcd.storage.get_fully_qualified_package_hash(storage_id, partial_package_hash)
@@ -253,7 +256,27 @@ def cli_store_get(ref):
         # find package
         libmailcd.storage.download(storage_id, package_hash, target_path)
         print(f"Package downloaded: '{target_relpath}'")
-    # Case: storage id and label list
+    elif labels:
+        matches = libmailcd.storage.find(storage_id, labels)
+        if len(matches) > 1:
+            print(f"Many matches found for given labels: {labels}")
+            for m in matches:
+                m_labels = libmailcd.storage.get_labels(storage_id, m)
+                print(f"{m}")
+                for l in m_labels:
+                    print(f"-{l}")
+            sys.exit(0)
+        if len(matches) == 0:
+            print(f"Nothing found matching labels: {labels}")
+            sys.exit(0)
+
+        package_hash = matches[0]
+
+        target_relpath = Path(".mb", "storage", storage_id, package_hash)
+        target_path = Path(Path.cwd(), target_relpath)
+        libmailcd.storage.download(storage_id, package_hash, target_path)
+        print(f"Package downloaded: '{target_relpath}'")
+    # Case: no package hash, no labels, what do? Error?
     else:
         pass
 

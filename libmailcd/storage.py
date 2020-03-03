@@ -35,14 +35,14 @@ def get_artifact_storage_root():
 
 ########################################
 
-def get(sid=None):
+def get(storage_id=None):
     """Get the list packages for a given storage ID, if nothing supplied, return the
     list of storage IDs.
     """
     path = Path(STORAGE_ROOT)
 
-    if sid:
-        path = Path(path, sid)
+    if storage_id:
+        path = Path(path, storage_id)
 
     raw_files = os.listdir(path)
 
@@ -52,7 +52,7 @@ def get(sid=None):
     files = []
     for rf in raw_files:
         should_get = True
-        if sid and not libmailcd.utils.is_hex(rf):
+        if storage_id and not libmailcd.utils.is_hex(rf):
             should_get = False
 
         if should_get:
@@ -192,6 +192,30 @@ def get_labels(storage_id, package_hash):
                 labels = db[full_package_hash]["labels"]
 
     return labels
+
+def find(storage_id, labels):
+    """Find all the packages for the specified storage_id that match all the specified labels.
+    """
+    matches = []
+    # get all packages for a given storage_id
+    packages = get(storage_id)
+
+    for package in packages:
+        # get all labels for each package
+        package_labels = get_labels(storage_id, package)
+
+        # match labels for package against target labels
+        # validate that the package contains all the required labels
+        is_match = True
+        for required_label in labels:
+            if not required_label in package_labels:
+                is_match = False
+                break
+
+        if is_match:
+            matches.append(package)
+
+    return matches
 
 ########################################
 
