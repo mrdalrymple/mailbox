@@ -87,13 +87,9 @@ def cli():
     app_init(settings)
     pass
 
-
-@cli.group("store", invoke_without_command=True)
+@cli.group("store")
 @click.pass_context
 def cli_store(ctx):
-    # If no subcommand specified, default to 'ls'
-    if ctx.invoked_subcommand is None:
-        ctx.invoke(cli_store_ls)
     pass
 
 @cli_store.command("add")
@@ -119,6 +115,8 @@ def cli_store_add(storage_id, package):
 @click.argument("ref", default=None, required=False)
 @click.option("--label")
 def cli_store_ls(ref, label):
+    """Navigate around the package store.
+    """
     # Case: mb store
     #  Should show list of all storage IDs
     if not ref:
