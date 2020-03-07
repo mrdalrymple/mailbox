@@ -322,7 +322,7 @@ def cli_build(project_dir):
                 logging.debug(f"MANY FOUND")
                 raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found in store '{storage_id}' with labels: {labels}")
     except libmailcd.errors.StorageMultipleFound as e:
-        print(f"Error: {e}")
+        print(f"Error - {e}")
         #print(f"Matches:")
         for match in e.matches:
             #print(f"{e.storage_id}/{match}")
