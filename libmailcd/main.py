@@ -325,6 +325,7 @@ def cli_build(project_dir):
         for match in e.matches:
             #print(f"{e.storage_id}/{match}")
             print(f"{match}")
+        exit_code = 2
         pass
     except libmailcd.errors.StorageIdNotFoundError as e:
         print(f"{e}")
