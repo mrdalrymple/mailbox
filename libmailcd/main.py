@@ -296,15 +296,18 @@ def cli_build(project_dir):
     arg_project_dir = Path(project_dir).resolve()
 
     pipeline_filepath = Path(arg_project_dir, INSOURCE_PIPELINE_FILENAME).resolve()
+    logging.debug(f"pipeline_filepath: {pipeline_filepath}")
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
-    logging.debug(f"pipeline:\n{pipeline}")
+    logging.debug(f"contents:\n{pipeline}")
 
     inbox = pipeline['inbox']
-
-    logging.debug(f"inbox:\n{inbox}")
+    logging.debug(f"contents.inbox:\n{inbox}")
 
     try:
+        packages_to_download = []
+
+        # Find required packages
         for slot in inbox:
             logging.debug(f"{slot}")
 
@@ -317,16 +320,40 @@ def cli_build(project_dir):
             matches = libmailcd.storage.find(storage_id, labels)
             if len(matches) > 1:
                 raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found in store '{storage_id}' with labels: {labels}")
+            if not matches:
+                raise ValueError("No matches found for '{storage_id}' with labels: {labels}")
+            package_hash = matches[0]
+
+            packages_to_download.append({
+                "id": storage_id,
+                "hash": package_hash
+            })
+
+        # Download all required packages
+        # TODO(matthew): Do we need to optimize this to only actually download ones we don't already have
+        for package in packages_to_download:
+            storage_id = package['id']
+            package_hash = package['hash']
+            print(f"Downloading package: {storage_id}/{package_hash}")
+            # need a current workspace (cwd)
+            # calculate target directory
+            target_relpath = Path(".mb", "storage", storage_id, package_hash)
+            target_path = Path(arg_project_dir, target_relpath)
+
+            # download to the target directory
+            libmailcd.storage.download(storage_id, package_hash, target_path)
+            print(f" --> '{target_relpath}'")
     except libmailcd.errors.StorageMultipleFound as e:
         print(f"Error - {e}")
         for match in e.matches:
             print(f"{match}")
         exit_code = 2
-        pass
     except libmailcd.errors.StorageIdNotFoundError as e:
         print(f"{e}")
         exit_code = 1
-        pass
+    except Exception as e:
+        print(f"{e}")
+        exit_code = 3
 
     sys.exit(exit_code)
 
