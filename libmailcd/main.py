@@ -2,6 +2,7 @@
 
 import sys
 import os
+import logging
 import argparse
 from pathlib import Path, PurePath
 import pprint
@@ -83,6 +84,8 @@ def exec_stage(config, stage_name, stage):
 #  level here for all subcommands
 @click.group()
 def cli():
+    logging.basicConfig(level=logging.DEBUG)
+
     settings = {}
     settings['storage_root'] = libmailcd.storage.get_artifact_storage_root()
 
@@ -291,18 +294,18 @@ def cli_build(project_dir):
     pipeline_filepath = Path(arg_project_dir, INSOURCE_PIPELINE_FILENAME).resolve()
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
-    print(f"pipeline:\n{pipeline}")
+    logging.debug(f"pipeline:\n{pipeline}")
 
     inbox = pipeline['inbox']
 
-    print(f"inbox:\n{inbox}")
+    logging.debug(f"inbox:\n{inbox}")
 
     try:
         for slot in inbox:
-            print(f"{slot}")
+            logging.debug(f"{slot}")
 
             tag = inbox[slot]['tag']
-            print(f"tag={tag}")
+            logging.debug(f"tag={tag}")
 
             labels = tag
             storage_id = slot
@@ -310,14 +313,15 @@ def cli_build(project_dir):
             # TODO(Matthew): should find really raise FileNotFoundError?  maybe custom instead? StorageIdNotFoundError?
             # May need to do this when we create that interface between out-of-box and customiztion
             matches = libmailcd.storage.find(storage_id, labels)
-            print(f"matches:{matches}")
+            logging.debug(f"matches:{matches}")
             if len(matches) > 1:
-                print(f"MANY FOUND")
-                raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found with labels: {labels}")
+                logging.debug(f"MANY FOUND")
+                raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found in store '{storage_id}' with labels: {labels}")
     except libmailcd.errors.StorageMultipleFound as e:
-        print(f"{e}")
-        print(f"Matches:")
+        print(f"Error: {e}")
+        #print(f"Matches:")
         for match in e.matches:
+            #print(f"{e.storage_id}/{match}")
             print(f"{match}")
         pass
     except libmailcd.errors.StorageIdNotFoundError as e:
