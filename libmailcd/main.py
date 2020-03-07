@@ -10,6 +10,7 @@ import click
 import libmailcd
 import libmailcd.storage
 import libmailcd.utils
+import libmailcd.errors
 
 ########################################
 
@@ -77,8 +78,9 @@ def exec_stage(config, stage_name, stage):
 ########################################
 
 
-
-
+# TODO(matthew): enable logging and set default levels here
+# TODO(matthew): see if there is a way to pass --debug and update logging
+#  level here for all subcommands
 @click.group()
 def cli():
     settings = {}
@@ -278,6 +280,52 @@ def cli_store_get(ref, labels):
     else:
         pass
 
+########################################
+
+@cli.command("build")
+@click.option("--project_dir", default=".")
+def cli_build(project_dir):
+    exit_code = 0
+    arg_project_dir = Path(project_dir).resolve()
+
+    pipeline_filepath = Path(arg_project_dir, INSOURCE_PIPELINE_FILENAME).resolve()
+
+    pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
+    print(f"pipeline:\n{pipeline}")
+
+    inbox = pipeline['inbox']
+
+    print(f"inbox:\n{inbox}")
+
+    try:
+        for slot in inbox:
+            print(f"{slot}")
+
+            tag = inbox[slot]['tag']
+            print(f"tag={tag}")
+
+            labels = tag
+            storage_id = slot
+
+            # TODO(Matthew): should find really raise FileNotFoundError?  maybe custom instead? StorageIdNotFoundError?
+            # May need to do this when we create that interface between out-of-box and customiztion
+            matches = libmailcd.storage.find(storage_id, labels)
+            print(f"matches:{matches}")
+            if len(matches) > 1:
+                print(f"MANY FOUND")
+                raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found with labels: {labels}")
+    except libmailcd.errors.StorageMultipleFound as e:
+        print(f"{e}")
+        print(f"Matches:")
+        for match in e.matches:
+            print(f"{match}")
+        pass
+    except libmailcd.errors.StorageIdNotFoundError as e:
+        print(f"{e}")
+        exit_code = 1
+        pass
+
+    sys.exit(exit_code)
 
 ########################################
 
@@ -318,8 +366,6 @@ def cli_storage_list(sid):
             print(f"Nothing currently stored")
 
     pass
-
-
 
 #mb storage label LUA/acdef
 #mb storage label LUA acdef
@@ -362,6 +408,7 @@ def cli_storage_label(ref, label):
             print(f"{storage_id} - No entries")
     pass
 
+########################################
 
 # NOTE(matthew): This can eventually be removed after completed ported to click.
 #  Need to see where all this code fits in.

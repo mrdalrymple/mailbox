@@ -7,6 +7,7 @@ import yaml
 import shutil
 
 import libmailcd.utils
+import libmailcd.errors
 
 ########################################
 
@@ -44,7 +45,12 @@ def get(storage_id=None):
     if storage_id:
         path = Path(path, storage_id)
 
-    raw_files = os.listdir(path)
+    try:
+        raw_files = os.listdir(path)
+    except FileNotFoundError:
+        if storage_id:
+            raise libmailcd.errors.StorageIdNotFoundError(storage_id)
+        raise
 
     # Parse out any files that not package hashes
     # TODO(matthew): This has to be done because of the database file, is there
@@ -199,6 +205,11 @@ def find(storage_id, labels):
     matches = []
     # get all packages for a given storage_id
     packages = get(storage_id)
+
+    # Special Case: if labels is not array, and is single string, treat that
+    #  string as if it is a label
+    if isinstance(labels, str):
+        labels = [labels]
 
     for package in packages:
         # get all labels for each package
