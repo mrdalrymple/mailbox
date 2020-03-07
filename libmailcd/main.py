@@ -317,9 +317,7 @@ def cli_build(project_dir):
             # TODO(Matthew): should find really raise FileNotFoundError?  maybe custom instead? StorageIdNotFoundError?
             # May need to do this when we create that interface between out-of-box and customiztion
             matches = libmailcd.storage.find(storage_id, labels)
-            logging.debug(f"matches:{matches}")
             if len(matches) > 1:
-                logging.debug(f"MANY FOUND")
                 raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found in store '{storage_id}' with labels: {labels}")
     except libmailcd.errors.StorageMultipleFound as e:
         print(f"Error - {e}")
