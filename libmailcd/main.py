@@ -314,16 +314,12 @@ def cli_build(project_dir):
             labels = tag
             storage_id = slot
 
-            # TODO(Matthew): should find really raise FileNotFoundError?  maybe custom instead? StorageIdNotFoundError?
-            # May need to do this when we create that interface between out-of-box and customiztion
             matches = libmailcd.storage.find(storage_id, labels)
             if len(matches) > 1:
                 raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found in store '{storage_id}' with labels: {labels}")
     except libmailcd.errors.StorageMultipleFound as e:
         print(f"Error - {e}")
-        #print(f"Matches:")
         for match in e.matches:
-            #print(f"{e.storage_id}/{match}")
             print(f"{match}")
         exit_code = 2
         pass
