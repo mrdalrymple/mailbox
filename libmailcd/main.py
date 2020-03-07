@@ -344,7 +344,7 @@ def cli_storage(ctx):
 @click.argument("sid")
 @click.argument("package", type=click.Path(exists=True)) # can be zip or directory
 def cli_storage_add(sid, package):
-    print(f"add({sid}, {package})")
+    logging.debug(f"add({sid}, {package})")
     libmailcd.storage.add(sid, package)
     pass
 
