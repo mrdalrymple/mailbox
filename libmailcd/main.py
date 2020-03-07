@@ -83,8 +83,12 @@ def exec_stage(config, stage_name, stage):
 # TODO(matthew): see if there is a way to pass --debug and update logging
 #  level here for all subcommands
 @click.group()
-def cli():
-    logging.basicConfig(level=logging.DEBUG)
+@click.option("--debug/--no-debug", default=False, help="Show debug output")
+def cli(debug):
+    if debug:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     settings = {}
     settings['storage_root'] = libmailcd.storage.get_artifact_storage_root()
