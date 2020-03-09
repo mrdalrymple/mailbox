@@ -305,7 +305,8 @@ def cli_build(project_dir):
     logging.debug(f"contents.inbox:\n{inbox}")
 
     try:
-        packages_to_download = []
+        inbox_packages = [] # all packages
+        packages_to_download = [] # all packages that need to be downloaded
 
         # Find required packages
         for slot in inbox:
@@ -324,10 +325,15 @@ def cli_build(project_dir):
                 raise ValueError("No matches found for '{storage_id}' with labels: {labels}")
             package_hash = matches[0]
 
-            packages_to_download.append({
+            pkg = {
                 "id": storage_id,
                 "hash": package_hash
-            })
+            }
+
+            packages_to_download.append(pkg)
+            inbox_packages.append(pkg)
+
+        env_vars = []
 
         # Download all required packages
         # TODO(matthew): Do we need to optimize this to only actually download ones we don't already have
@@ -343,6 +349,22 @@ def cli_build(project_dir):
             # download to the target directory
             libmailcd.storage.download(storage_id, package_hash, target_path)
             print(f" --> '{target_relpath}'")
+
+        # set env vars
+        for package in inbox_packages:
+            env_var_name = f"MB_{storage_id}_ROOT"
+            os.environ[env_var_name] = str(target_path)
+            env_vars.append(env_var_name)
+
+            env_var_name = f"MB_{storage_id}_ROOT_RELPATH"
+            os.environ[env_var_name] = str(target_relpath)
+            env_vars.append(env_var_name)
+
+        # Run main stage:
+        # for now just print env variables
+        print(f"ENV:")
+        for ev in env_vars:
+            print(f" {ev}={os.environ[ev]}")
     except libmailcd.errors.StorageMultipleFound as e:
         print(f"Error - {e}")
         for match in e.matches:
