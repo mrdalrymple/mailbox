@@ -29,7 +29,8 @@ setup(
     entry_points={
         'console_scripts': [
             'mb = libmailcd:cli',
-            'mbs = libmailcd:cli_store'
+            'mbs = libmailcd:cli_store',
+            'mbb = libmailcd:cli_build'
         ]
     }
 )
