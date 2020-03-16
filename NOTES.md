@@ -53,13 +53,21 @@ mb storage label LUA/acdef
 # additionaly do: show the root contents of that sub package/version.
 # question: do I show both? the labels and the contents, or just show the contents, and they must specify --label to view the labels for that subpackage.
 
-
-
-
 > mb storage LUA/acdef/2de/Bin/
 
-
 mb storage LUA/acdef/2de/Bin/ --rmlabel
+
+# Labels
+
+## Custom labels
+Do we want a "special labels" section in the db.yml?
+- woud be a dictionary (key/value pairs) of label name and label value.
+- automatically added to label queries
+- not able to be deleted via the CLI?
+- Example - layout_hash: a23d91f...
+- This might be something orgs want to automatically add
+- Do we do this on package creation?
+  - What about when package already created by org makes a new special/custom label type?  How to propogate that to all?
 
 # TODOs
 
