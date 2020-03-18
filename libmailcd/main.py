@@ -4,7 +4,9 @@ import sys
 import os
 import logging
 import argparse
-from pathlib import Path, PurePath
+from pathlib import Path
+import shutil
+
 import pprint
 import click
 
@@ -12,6 +14,7 @@ import libmailcd
 import libmailcd.storage
 import libmailcd.utils
 import libmailcd.errors
+import libmailcd.workflow
 
 ########################################
 
@@ -301,18 +304,36 @@ def cli_build(project_dir):
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
     logging.debug(f"contents:\n{pipeline}")
 
-    inbox = pipeline['inbox']
-    logging.debug(f"contents.inbox:\n{inbox}")
+    workspace_outbox_relpath = Path(".mb", "outbox")
+    workspace_outbox_path = Path(".mb", "outbox").resolve()
+
+    pipeline_inbox = None
+    if 'inbox' in pipeline:
+        pipeline_inbox = pipeline['inbox']
+        logging.debug(f"contents.inbox:\n{pipeline_inbox}")
+
+    pipeline_outbox = None
+    if 'outbox' in pipeline:
+        pipeline_outbox = pipeline['outbox']
+        logging.debug(f"contents.outbox:\n{pipeline_outbox}")
+
+    # TODO(matthew): Should we clean up the outbox here? for now, yes...
+    if workspace_outbox_path.exists():
+        # TODO(matthew): what about the case where this isn't a directory?
+        shutil.rmtree(workspace_outbox_path)
 
     try:
+        #######################################
+        #               INBOX                 #
+        #######################################
         inbox_packages = [] # all packages
         packages_to_download = [] # all packages that need to be downloaded
 
         # Find required packages
-        for slot in inbox:
+        for slot in pipeline_inbox:
             logging.debug(f"{slot}")
 
-            tag = inbox[slot]['tag']
+            tag = pipeline_inbox[slot]['tag']
             logging.debug(f"tag={tag}")
 
             labels = tag
@@ -337,6 +358,7 @@ def cli_build(project_dir):
 
         # Download all required packages
         # TODO(matthew): Do we need to optimize this to only actually download ones we don't already have
+        print(f"========== INBOX ==========")
         for package in packages_to_download:
             storage_id = package['id']
             package_hash = package['hash']
@@ -350,21 +372,119 @@ def cli_build(project_dir):
             libmailcd.storage.download(storage_id, package_hash, target_path)
             print(f" --> '{target_relpath}'")
 
+        print(f"========== ===== ==========")
+
         # set env vars
         for package in inbox_packages:
             env_var_name = f"MB_{storage_id}_ROOT"
-            os.environ[env_var_name] = str(target_path)
+            env_var_value = str(target_path)
+            os.environ[env_var_name] = env_var_value
             env_vars.append(env_var_name)
+            logging.debug(f"SET {env_var_name}={env_var_value}")
 
             env_var_name = f"MB_{storage_id}_ROOT_RELPATH"
-            os.environ[env_var_name] = str(target_relpath)
+            env_var_value = str(target_relpath)
+            os.environ[env_var_name] = env_var_value
             env_vars.append(env_var_name)
+            logging.debug(f"SET {env_var_name}={env_var_value}")
+
+        print(f"===========================")
+
+        #######################################
+
+
+        #######################################
+        #             PROCESSING              #
+        #######################################
 
         # Run main stage:
         # for now just print env variables
         print(f"ENV:")
         for ev in env_vars:
             print(f" {ev}={os.environ[ev]}")
+
+        #######################################
+
+
+        #######################################
+        #               OUTBOX                #
+        #######################################
+
+        packages_to_upload = [] # all packages that need to be uploaded
+        files_to_copy = [] # all the file copy rules
+
+        for storage_id in pipeline_outbox:
+            logging.debug(f"{storage_id}")
+            rules = pipeline_outbox[storage_id]
+            logging.debug(f"rules={rules}")
+            root_path = arg_project_dir
+
+            target_relpath = Path(".mb", "outbox", storage_id)
+            target_path = Path(arg_project_dir, target_relpath)
+
+            for rule in rules:
+                source, destination = rule.split("->")
+                source = source.strip()
+                destination = destination.strip()
+                # Support destinations starting with "/" (in Windows)
+                #  and not have it think it's the root of the drive
+                #  but instead the root of the output path
+                # TODO(matthew): What about linux?
+                if os.name == 'nt':
+                    destination = destination.lstrip('/\\')
+
+                logging.debug(f"src='{source}'")
+                logging.debug(f"dst='{destination}'")
+                logging.debug(f"target='{target_path}'")
+
+                # TODO(matthew): What about the case where we may want to grab
+                #  something from a pulled in package?  Shouldn't always assume
+                #  searching from the root_path, but how to implement this?
+                # Maybe do this format:
+                #   "WORKSPACE: *.txt -> /docs/"
+                #   "LUA: *.dll -> /external/lua/"
+                found_files = root_path.glob("**/" + source)
+                for ffile in found_files:
+                    ffile_source_path = ffile
+
+                    # get filename
+                    ffilename = ffile.name
+
+                    # generate output path
+                    ffile_destination_path = Path.joinpath(target_path, destination, ffile.name)
+
+                    # copy file (or save it to a list to be copied later)
+                    files_to_copy.append(
+                        libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path)
+                    )
+                    pass
+                pass
+
+            # If successfully parsed all the rules for this package, mark it to be uploaded
+            # TODO(matthew): need to make sure an upload of an empty directory
+            #   doesnt work
+            #  i.e. we add this storage id to upload, but we are not sure that any
+            #   file will actually be copied into it.
+            packages_to_upload.append(
+                libmailcd.workflow.PackageUpload(storage_id, target_path)
+            )
+
+        print(f"========== OUTBOX ==========")
+        for ftc in files_to_copy:
+            print(f"Copy {ftc.src_relative} => {ftc.dst_relative}")
+            os.makedirs(ftc.dst_root, exist_ok=True)
+            shutil.copy(ftc.src, ftc.dst)
+
+        print(f"========== ======= ==========")
+
+        for ptu in packages_to_upload:
+            print(f"Upload {ptu.storage_id}")
+            package_hash = libmailcd.storage.add(ptu.storage_id, ptu.package_path)
+            print(f" as: {package_hash}")
+
+        print(f"=============================")
+
+        #######################################
     except libmailcd.errors.StorageMultipleFound as e:
         print(f"Error - {e}")
         for match in e.matches:

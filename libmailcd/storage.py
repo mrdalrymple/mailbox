@@ -5,6 +5,7 @@ import os
 from pathlib import Path, PurePath
 import yaml
 import shutil
+import logging
 
 import libmailcd.utils
 import libmailcd.errors
@@ -74,12 +75,12 @@ def add(storage_id, package):
     if os.path.isdir(package):
         # calculate hash
         package_hash = libmailcd.utils.hash_directory(package)
-        print(f"package_hash={package_hash}")
+
         # lookup hash in store
         ## return out if already exists
         if _exists(storage_id, package_hash):
-            print(f"Already exists")
-            return
+            logging.debug(f"{storage_id}: {package_hash} - Already exists")
+            return package_hash
         # create space in store (cleanup on failure? thinking yes)
         _create(storage_id, package_hash)
 
@@ -89,12 +90,12 @@ def add(storage_id, package):
     else:
         # calculate hash
         package_hash = libmailcd.utils.hash_file(package)
-        print(f"package_hash={package_hash}")
+
         # lookup hash in store
         ## return out if already exists
         if _exists(storage_id, package_hash):
-            print(f"Already exists")
-            return
+            logging.debug(f"{storage_id}: {package_hash} - Already exists")
+            return package_hash
         # create space in store (cleanup on failure? thinking yes)
         _create(storage_id, package_hash)
 
