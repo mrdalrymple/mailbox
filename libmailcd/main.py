@@ -343,7 +343,7 @@ def cli_build(project_dir):
             if len(matches) > 1:
                 raise libmailcd.errors.StorageMultipleFound(storage_id, matches, f"multiple found in store '{storage_id}' with labels: {labels}")
             if not matches:
-                raise ValueError("No matches found for '{storage_id}' with labels: {labels}")
+                raise ValueError(f"No matches found for '{storage_id}' with labels: {labels}")
             package_hash = matches[0]
 
             pkg = {
