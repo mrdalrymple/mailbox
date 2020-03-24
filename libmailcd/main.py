@@ -20,6 +20,10 @@ import libmailcd.workflow
 
 INSOURCE_PIPELINE_FILENAME = 'pipeline.yml'
 
+LOCAL_MB_ROOT = ".mb"
+LOCAL_INBOX_DIRNAME = "inbox"
+LOCAL_OUTBOX_DIRNAME = "outbox"
+
 ########################################
 
 def app_init(settings):
@@ -143,15 +147,15 @@ def cli_clean(workspace):
                 ffile.unlink()
                 print(f"Removed custom file: {ffile_relpath}")
 
-    storage_relpath = Path(".mb", "storage") # maybe should rename this to inbox?
-    outbox_relpath = Path(".mb", "outbox")
+    inbox_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME)
+    outbox_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME)
 
-    storage_path = Path(workspace, storage_relpath).resolve()
+    inbox_path = Path(workspace, inbox_relpath).resolve()
     outbox_path = Path(workspace, outbox_relpath).resolve()
     
-    if storage_path.exists():
-        shutil.rmtree(storage_path)
-        print(f"Removed local storage ({storage_relpath})...")
+    if inbox_path.exists():
+        shutil.rmtree(inbox_path)
+        print(f"Removed local storage ({inbox_relpath})...")
 
     if outbox_path.exists():
         shutil.rmtree(outbox_path)
@@ -319,7 +323,7 @@ def cli_store_get(ref, labels):
 
         # need a current workspace (cwd)
         # calculate target directory
-        target_relpath = Path(".mb", "storage", storage_id, package_hash)
+        target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
         target_path = Path(Path.cwd(), target_relpath)
 
         # find package
@@ -341,7 +345,7 @@ def cli_store_get(ref, labels):
 
         package_hash = matches[0]
 
-        target_relpath = Path(".mb", "storage", storage_id, package_hash)
+        target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
         target_path = Path(Path.cwd(), target_relpath)
         libmailcd.storage.download(storage_id, package_hash, target_path)
         print(f"Package downloaded: '{target_relpath}'")
@@ -363,8 +367,8 @@ def cli_build(project_dir):
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
     #logging.debug(f"pipeline:\n{pipeline}")
 
-    workspace_outbox_relpath = Path(".mb", "outbox")
-    workspace_outbox_path = Path(".mb", "outbox").resolve()
+    workspace_outbox_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME)
+    workspace_outbox_path = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME).resolve()
 
     pipeline_inbox = None
     if 'inbox' in pipeline:
@@ -430,7 +434,7 @@ def cli_build(project_dir):
                 print(f"Downloading package: {storage_id}/{package_hash}")
                 # need a current workspace (cwd)
                 # calculate target directory
-                target_relpath = Path(".mb", "storage", storage_id, package_hash)
+                target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
                 target_path = Path(arg_project_dir, target_relpath)
 
                 # download to the target directory
@@ -491,7 +495,7 @@ def cli_build(project_dir):
                 logging.debug(f"rules={rules}")
                 root_path = arg_project_dir
 
-                target_relpath = Path(".mb", "outbox", storage_id)
+                target_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME, storage_id)
                 target_path = Path(arg_project_dir, target_relpath)
 
                 for rule in rules:
