@@ -23,7 +23,7 @@ def hash_file(filepath):
     content_hash = hashlib.sha1()
 
     if not os.path.exists(filepath):
-        return -1
+        raise ValueError(f"File to hash doesn't exist: {filepath}")
 
     # Note: This is a little bit differant that hash_directory
     #  Need to check if file, as directories show up in the return file listing
@@ -53,7 +53,7 @@ def hash_directory(directory):
     content_hash = hashlib.sha1()
 
     if not os.path.exists(directory):
-        return -1
+        raise ValueError(f"Directory to hash doesn't exist: {directory}")
 
     # TODO(matthew): create file list first, then sort, then read for hashing
     #  What is the impact for packaging something with lots of files?

@@ -555,8 +555,11 @@ def cli_build(project_dir):
 
             for ptu in packages_to_upload:
                 print(f"Upload {ptu.storage_id}")
-                package_hash = libmailcd.storage.add(ptu.storage_id, ptu.package_path)
-                print(f" as: {package_hash}")
+                if os.path.exists(ptu.package_path):
+                    package_hash = libmailcd.storage.add(ptu.storage_id, ptu.package_path)
+                    print(f" as: {package_hash}")
+                else:
+                    print(f" nothing to store for: {ptu.storage_id} (empty)")
 
             print(f"=============================")
 
