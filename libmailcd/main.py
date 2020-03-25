@@ -380,10 +380,10 @@ def cli_build(project_dir):
         pipeline_outbox = pipeline['outbox']
         logging.debug(f"pipeline.outbox:\n{pipeline_outbox}")
 
-    pipeline_steps = None
-    if 'steps' in pipeline:
-        pipeline_steps = pipeline['steps']
-        logging.debug(f"pipeline.steps:\n{pipeline_steps}")
+    pipeline_stages = None
+    if 'stages' in pipeline:
+        pipeline_stages = pipeline['stages']
+        logging.debug(f"pipeline.stages:\n{pipeline_stages}")
 
     # TODO(matthew): Should we clean up the outbox here? for now, yes...
     if workspace_outbox_path.exists():
@@ -473,10 +473,17 @@ def cli_build(project_dir):
             for ev in env_vars:
                 print(f" {ev}={os.environ[ev]}")
 
-        if pipeline_steps:
-            for step in pipeline_steps:
-                print(f"STEP: {step}")
-                os.system(step)
+        if pipeline_stages:
+            for stage_name in pipeline_stages:
+                print(f"Stage: {stage_name}")
+                stage = pipeline_stages[stage_name]
+
+                if 'steps' in stage:
+                    stage_steps = stage['steps']
+
+                    for step in stage_steps:
+                        print(f"{stage_name}: {step}")
+                        os.system(step)
 
         #######################################
 
