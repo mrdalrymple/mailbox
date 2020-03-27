@@ -217,7 +217,9 @@ def cli_store_ls(ref, label):
         sid = storage_id.upper()
         versions = libmailcd.storage.get(sid)
         for version in versions:
-            print(f"{version}")
+            labels = libmailcd.storage.get_labels(storage_id, version)
+            labels_string = ",".join(labels)
+            print(f"{version}\t{labels_string}")
 
         if not versions:
             print(f"{sid} - No entries")
