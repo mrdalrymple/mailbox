@@ -1,0 +1,5 @@
+INSOURCE_PIPELINE_FILENAME = 'pipeline.yml'
+
+LOCAL_MB_ROOT = ".mb"
+LOCAL_INBOX_DIRNAME = "inbox"
+LOCAL_OUTBOX_DIRNAME = "outbox"

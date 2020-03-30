@@ -28,9 +28,9 @@ setup(
     #scripts=['bin/mailcd.py']
     entry_points={
         'console_scripts': [
-            'mb = libmailcd:cli',
-            'mbs = libmailcd:cli_store',
-            'mbb = libmailcd:cli_build'
+            'mb = libmailcd.cli.main:main',
+            'mbs = libmailcd.cli.store:main_store',
+            'mbb = libmailcd.cli.build:main_build'
         ]
     }
 )
