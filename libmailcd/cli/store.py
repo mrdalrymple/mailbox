@@ -7,6 +7,7 @@ from libmailcd.cli.main import main
 from libmailcd.constants import LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME
 import libmailcd.storage
 
+########################################
 
 @main.group("store")
 @click.pass_context
@@ -27,7 +28,7 @@ def main_store_add(storage_id, package):
 
     """
     package_hash = libmailcd.storage.add(storage_id, package)
-    # todo(matthew): we need the package hash here does storage.add return that?
+    # TODO(matthew): we need the package hash here does storage.add return that?
     print(f"Package added under store '{storage_id}' ({package_hash})")
 
 # TODO:(matthew) handle the output
@@ -107,10 +108,12 @@ def main_store_ls(ref, label):
         # list the metadata (labels)
         print(f"Metadata")
         print(f"====================\n")
+        print(f"Storage ID:   {storage_id}")
+        print(f"Package Hash: {package_hash}")
         print("Labels:")
         if package_labels:
             for label in package_labels:
-                print(f"{label}")
+                print(f"              {label}")
         else:
             print("No labels.")
         
@@ -120,12 +123,13 @@ def main_store_ls(ref, label):
         print(f"Contents")
         print(f"====================\n")
         if package_fileinfos:
-            print(f"File Name\t\t\tStats")
+            print("{0:20}\t{1:20}".format("File Name", "Stats"))
         for fileinfo in package_fileinfos:
             to_show = fileinfo.copy()
             if 'name' in to_show:
                 del to_show['name']
-            print(f"{fileinfo['name']}\t\t{to_show}")
+            filepath = str(fileinfo['name'])
+            print("{0:20}\t{1:20}".format(filepath, str(to_show)))
 
 @main_store.command("get")
 @click.argument("ref")
