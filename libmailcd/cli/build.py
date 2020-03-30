@@ -17,12 +17,12 @@ from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL
 ########################################
 
 @main.command("build")
-@click.option("--project_dir", default=".")
-def main_build(project_dir):
+@click.option("--workspace", default=".")
+def main_build(workspace):
     exit_code = 0
-    arg_project_dir = Path(project_dir).resolve()
+    arg_workspace = Path(workspace).resolve()
 
-    pipeline_filepath = Path(arg_project_dir, INSOURCE_PIPELINE_FILENAME).resolve()
+    pipeline_filepath = Path(arg_workspace, INSOURCE_PIPELINE_FILENAME).resolve()
     logging.debug(f"pipeline_filepath: {pipeline_filepath}")
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
@@ -59,7 +59,7 @@ def main_build(project_dir):
         #######################################
         if pipeline_inbox:
             print(f"========== INBOX ==========")
-            env_vars = inbox_run(arg_project_dir, pipeline_inbox)
+            env_vars = inbox_run(arg_workspace, pipeline_inbox)
             print(f"===========================")
         #######################################
 
@@ -102,10 +102,10 @@ def main_build(project_dir):
                 logging.debug(f"{storage_id}")
                 rules = pipeline_outbox[storage_id]
                 logging.debug(f"rules={rules}")
-                root_path = arg_project_dir
+                root_path = arg_workspace
 
                 target_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME, storage_id)
-                target_path = Path(arg_project_dir, target_relpath)
+                target_path = Path(arg_workspace, target_relpath)
 
                 for rule in rules:
                     source, destination = rule.split("->")
@@ -136,14 +136,12 @@ def main_build(project_dir):
                         ffilename = ffile.name
 
                         # generate output path
-                        ffile_destination_path = Path.joinpath(target_path, destination, ffile.name)
+                        ffile_destination_path = Path.joinpath(target_path, destination, ffilename)
 
                         # copy file (or save it to a list to be copied later)
                         files_to_copy.append(
                             libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path)
                         )
-                        pass
-                    pass
 
                 # If successfully parsed all the rules for this package, mark it to be uploaded
                 # TODO(matthew): need to make sure an upload of an empty directory
