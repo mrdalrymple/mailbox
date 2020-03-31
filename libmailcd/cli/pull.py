@@ -12,7 +12,8 @@ from libmailcd.cli.main import main
 
 @main.command("pull")
 @click.option("--workspace", default=".")
-def main_pull(workspace):
+@click.pass_obj
+def main_pull(api, workspace):
     arg_workspace = Path(workspace).resolve()
     pipeline_filepath = Path(arg_workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 
@@ -23,4 +24,4 @@ def main_pull(workspace):
         pipeline_inbox = pipeline['inbox']
 
     if pipeline_inbox:
-        inbox_run(workspace, pipeline_inbox)
+        inbox_run(api, workspace, pipeline_inbox)

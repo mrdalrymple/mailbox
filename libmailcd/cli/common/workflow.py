@@ -9,7 +9,7 @@ from libmailcd.constants import LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME
 
 ########################################
 
-def inbox_run(workspace, pipeline_inbox):
+def inbox_run(api, workspace, pipeline_inbox):
     env_vars = []
 
     if pipeline_inbox:

@@ -18,7 +18,8 @@ from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL
 
 @main.command("build")
 @click.option("--workspace", default=".")
-def main_build(workspace):
+@click.pass_obj
+def main_build(api, workspace):
     exit_code = 0
     arg_workspace = Path(workspace).resolve()
 
@@ -59,7 +60,7 @@ def main_build(workspace):
         #######################################
         if pipeline_inbox:
             print(f"========== INBOX ==========")
-            env_vars = inbox_run(arg_workspace, pipeline_inbox)
+            env_vars = inbox_run(api, arg_workspace, pipeline_inbox)
             print(f"===========================")
         #######################################
 
@@ -163,7 +164,7 @@ def main_build(workspace):
             for ptu in packages_to_upload:
                 print(f"Upload {ptu.storage_id}")
                 if os.path.exists(ptu.package_path):
-                    package_hash = libmailcd.storage.add(ptu.storage_id, ptu.package_path)
+                    package_hash = api.store_add(ptu.storage_id, ptu.package_path)
                     print(f" as: {package_hash}")
                 else:
                     print(f" nothing to store for: {ptu.storage_id} (empty)")

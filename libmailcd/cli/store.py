@@ -17,7 +17,8 @@ def main_store(ctx):
 @main_store.command("add")
 @click.argument("storage_id")
 @click.argument("package", type=click.Path(exists=True))  # can be zip or directory
-def main_store_add(storage_id, package):
+@click.pass_obj
+def main_store_add(api, storage_id, package):
     """Add a PACKAGE (directory or zip file) to a specified location (STORAGE_ID).
 
     Example(s):
@@ -27,7 +28,7 @@ def main_store_add(storage_id, package):
         mb store add MYPACKAGE ./mypackage_v3/
 
     """
-    package_hash = libmailcd.storage.add(storage_id, package)
+    package_hash = api.store_add(storage_id, package)
     # TODO(matthew): we need the package hash here does storage.add return that?
     print(f"Package added under store '{storage_id}' ({package_hash})")
 
@@ -35,13 +36,14 @@ def main_store_add(storage_id, package):
 @main_store.command("ls")
 @click.argument("ref", default=None, required=False)
 @click.option("--label")
-def main_store_ls(ref, label):
+@click.pass_obj
+def main_store_ls(api, ref, label):
     """Navigate around the package store.
     """
     # Case: mb store
     #  Should show list of all storage IDs
     if not ref:
-        storage_ids = libmailcd.storage.get()
+        storage_ids = api.store_get()
 
         for sid in storage_ids:
             print(f"{sid}")
@@ -61,9 +63,9 @@ def main_store_ls(ref, label):
     #  Should list all packages/versions for storage id
     if storage_id and not partial_package_hash:
         sid = storage_id.upper()
-        versions = libmailcd.storage.get(sid)
+        versions = api.store_get(sid)
         for version in versions:
-            labels = libmailcd.storage.get_labels(storage_id, version)
+            labels = api.store_get_labels(storage_id, version)
             labels_string = ",".join(labels)
             print(f"{version}\t{labels_string}")
 
@@ -79,12 +81,12 @@ def main_store_ls(ref, label):
     if storage_id and partial_package_hash:
         # fully qualify the ref
         try:
-            package_hash = libmailcd.storage.get_fully_qualified_package_hash(storage_id, partial_package_hash)
+            package_hash = api.store_fully_qualify_package(storage_id, partial_package_hash)
         except ValueError as e:
             # Case: mb store SID/2de -- has more than one result
             #  Should stop here and list all found matches
             print(f"{e}")
-            matches = libmailcd.storage.get_package_hash_matches(storage_id, partial_package_hash)
+            matches = api.store_find_matches(storage_id, partial_package_hash)
             for m in matches:
                 print(f"{m}")
             sys.exit(0)
@@ -92,7 +94,7 @@ def main_store_ls(ref, label):
         # Add any label specified
         if label:
             try:
-                libmailcd.storage.label(storage_id, package_hash, label)
+                api.store_label(storage_id, package_hash, label)
                 print(f"Label '{label}' added successfully...\n")
             except ValueError as e:
                 # Currently: Ignore if label already exists
@@ -101,9 +103,9 @@ def main_store_ls(ref, label):
                 pass
 
         # get contents of the package
-        package_fileinfos = libmailcd.storage.ls(storage_id, package_hash)
+        package_fileinfos = api.store_ls(storage_id, package_hash)
         # get metadata of the package
-        package_labels = libmailcd.storage.get_labels(storage_id, package_hash)
+        package_labels = api.store_get_labels(storage_id, package_hash)
 
         # list the metadata (labels)
         print(f"Metadata")
@@ -134,7 +136,8 @@ def main_store_ls(ref, label):
 @main_store.command("get")
 @click.argument("ref")
 @click.argument("labels", nargs=-1)
-def main_store_get(ref, labels):
+@click.pass_obj
+def main_store_get(api, ref, labels):
     """Get a PACKAGE from the specified REF, that have any of the specified LABELS.
 
     Example(s):
@@ -160,12 +163,12 @@ def main_store_get(ref, labels):
     if partial_package_hash:
         # fully qualify the ref
         try:
-            package_hash = libmailcd.storage.get_fully_qualified_package_hash(storage_id, partial_package_hash)
+            package_hash = api.store_fully_qualify_package(storage_id, partial_package_hash)
         except ValueError as e:
             # Case: mb store get SID/2de -- has more than one result
             #  Should stop here and list all found matches
             print(f"{e}")
-            matches = libmailcd.storage.get_package_hash_matches(storage_id, partial_package_hash)
+            matches = api.store_find_matches(storage_id, partial_package_hash)
             for m in matches:
                 print(f"{m}")
             sys.exit(0)
@@ -176,14 +179,14 @@ def main_store_get(ref, labels):
         target_path = Path(Path.cwd(), target_relpath)
 
         # find package
-        libmailcd.storage.download(storage_id, package_hash, target_path)
+        api.store_download(storage_id, package_hash, target_path)
         print(f"Package downloaded: '{target_relpath}'")
     elif labels:
-        matches = libmailcd.storage.find(storage_id, labels)
+        matches = api.store_find(storage_id, labels)
         if len(matches) > 1:
             print(f"Many matches found for given labels: {labels}")
             for m in matches:
-                m_labels = libmailcd.storage.get_labels(storage_id, m)
+                m_labels = api.store_get_labels(storage_id, m)
                 print(f"{m}")
                 for l in m_labels:
                     print(f"-{l}")
@@ -196,7 +199,7 @@ def main_store_get(ref, labels):
 
         target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
         target_path = Path(Path.cwd(), target_relpath)
-        libmailcd.storage.download(storage_id, package_hash, target_path)
+        api.store_download(storage_id, package_hash, target_path)
         print(f"Package downloaded: '{target_relpath}'")
     # Case: no package hash, no labels, what do? Error?
     else:

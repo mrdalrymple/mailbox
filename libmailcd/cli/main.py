@@ -4,6 +4,7 @@ from pathlib import Path
 import click
 
 import libmailcd.storage
+import libmailcd.api
 
 def app_init(settings):
     if settings['storage_root'] is not None:
@@ -17,7 +18,8 @@ def app_init(settings):
 #  level here for all subcommands
 @click.group()
 @click.option("--debug/--no-debug", default=False, help="Show debug output")
-def main(debug):
+@click.pass_context
+def main(ctx, debug):
     if debug:
         logging.basicConfig(level=logging.DEBUG)
     else:
@@ -28,3 +30,4 @@ def main(debug):
 
     app_init(settings)
 
+    ctx.obj = libmailcd.api.API()
