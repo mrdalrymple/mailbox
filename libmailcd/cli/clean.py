@@ -6,14 +6,21 @@ import shutil
 import click
 
 import libmailcd.utils
-from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, LOCAL_OUTBOX_DIRNAME
+from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, LOCAL_OUTBOX_DIRNAME, LOCAL_ENV_DIRNAME
 from libmailcd.cli.main import main
 
 ########################################
 
 @main.command("clean")
 @click.option("--workspace", default=".")
-def main_clean(workspace):
+@click.option("--env", is_flag=True)
+def main_clean(workspace, env):
+    """Cleans the mb files in the workspace.
+    
+    Arguments:
+        workspace {Path} -- Path to the workspace to clean.
+        env {Bool} -- Clean the environment out as well.
+    """
     arg_workspace = Path(workspace).resolve()
     pipeline_filepath = Path(arg_workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 
@@ -66,3 +73,10 @@ def main_clean(workspace):
     if outbox_path.exists():
         shutil.rmtree(outbox_path)
         print(f"Removed local outbox ({outbox_relpath})...")
+
+    if env:
+        env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
+        env_path = Path(workspace, env_relpath).resolve()
+        if env_path.exists():
+            shutil.rmtree(env_path)
+            print(f"Removed local env ({env_relpath})...")

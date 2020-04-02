@@ -10,7 +10,7 @@ from libmailcd.constants import LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME
 ########################################
 
 def inbox_run(api, workspace, pipeline_inbox):
-    env_vars = []
+    env_vars = {}
 
     if pipeline_inbox:
         inbox_packages = [] # all packages
@@ -60,14 +60,16 @@ def inbox_run(api, workspace, pipeline_inbox):
         for package in inbox_packages:
             env_var_name = f"MB_{storage_id}_ROOT"
             env_var_value = str(target_path)
-            os.environ[env_var_name] = env_var_value
-            env_vars.append(env_var_name)
+            #os.environ[env_var_name] = env_var_value
+            #env_vars.append(env_var_name)
+            env_vars[env_var_name] = env_var_value
             logging.debug(f"SET {env_var_name}={env_var_value}")
 
             env_var_name = f"MB_{storage_id}_ROOT_RELPATH"
             env_var_value = str(target_relpath)
-            os.environ[env_var_name] = env_var_value
-            env_vars.append(env_var_name)
+            #os.environ[env_var_name] = env_var_value
+            #env_vars.append(env_var_name)
+            env_vars[env_var_name] = env_var_value
             logging.debug(f"SET {env_var_name}={env_var_value}")
 
     return env_vars

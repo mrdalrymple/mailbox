@@ -24,4 +24,4 @@ def main_pull(api, workspace):
         pipeline_inbox = pipeline['inbox']
 
     if pipeline_inbox:
-        inbox_run(api, workspace, pipeline_inbox)
+        env_vars = inbox_run(api, workspace, pipeline_inbox)

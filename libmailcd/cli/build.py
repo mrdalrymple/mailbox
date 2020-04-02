@@ -10,9 +10,10 @@ import click
 
 import libmailcd.utils
 import libmailcd.workflow
+import libmailcd.env
 from libmailcd.cli.common.workflow import inbox_run
 from libmailcd.cli.main import main
-from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME
+from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME, LOCAL_ENV_DIRNAME
 
 ########################################
 
@@ -25,6 +26,10 @@ def main_build(api, workspace):
 
     pipeline_filepath = Path(arg_workspace, INSOURCE_PIPELINE_FILENAME).resolve()
     logging.debug(f"pipeline_filepath: {pipeline_filepath}")
+
+    arg_workspace = Path(workspace).resolve()
+    mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
+    mb_env_path = Path(arg_workspace, mb_env_relpath).resolve()
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
     #logging.debug(f"pipeline:\n{pipeline}")
@@ -53,16 +58,35 @@ def main_build(api, workspace):
         shutil.rmtree(workspace_outbox_path)
 
     try:
+        loaded_env = []
         env_vars = []
+        mb_inbox_env_vars = {}
 
         #######################################
         #               INBOX                 #
         #######################################
         if pipeline_inbox:
             print(f"========== INBOX ==========")
-            env_vars = inbox_run(api, arg_workspace, pipeline_inbox)
+            mb_inbox_env_vars = inbox_run(api, arg_workspace, pipeline_inbox)
             print(f"===========================")
         #######################################
+
+        # Note: Order matters here! Should inbox overwrite loaded env? Or vice versa?
+        # For now, we prefer loaded env over inbox env vars.  This should give users
+        #  the ability to load envs that overwrite the normal behavior.  However, this
+        #  case really shouldn't happen, but we should still make a decision here.
+        # I haven't thought this through enough, and could be persuaded either way.
+
+        for key, value in mb_inbox_env_vars.items():
+            os.environ[key] = value
+
+        loaded_env = libmailcd.env.get_variables(mb_env_path)
+        for key, value in loaded_env.items():
+            os.environ[key] = value
+
+        # Keep a list of all the variables we've set (use case? not sure yet)
+        env_vars.extend(mb_inbox_env_vars.keys())
+        env_vars.extend(loaded_env.keys())
 
 
         #######################################
