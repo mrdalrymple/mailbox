@@ -57,6 +57,16 @@ mb storage label LUA/acdef
 
 mb storage LUA/acdef/2de/Bin/ --rmlabel
 
+## Local Database Directory
+
+What do we call .mb/?
+- It will contain things like .mb/inbox, .mb/outbox, .mb/env, etc.
+
+It's like a local database.  No one would want to override this stuff right?
+What does git call their .git folder?
+
+The reason this is important is for having a convenient name to refer to this, for speaking, documentation, and variable names.
+
 # Labels
 
 ## Custom labels
