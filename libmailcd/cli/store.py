@@ -176,7 +176,7 @@ def main_store_get(api, ref, labels):
         # need a current workspace (cwd)
         # calculate target directory
         target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
-        target_path = Path(Path.cwd(), target_relpath)
+        target_path = Path(api.setting.workspace, target_relpath)
 
         # find package
         api.store_download(storage_id, package_hash, target_path)

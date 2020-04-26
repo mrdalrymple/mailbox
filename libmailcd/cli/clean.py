@@ -12,17 +12,17 @@ from libmailcd.cli.main import main
 ########################################
 
 @main.command("clean")
-@click.option("--workspace", default=".")
 @click.option("--env", is_flag=True)
-def main_clean(workspace, env):
+@click.pass_obj
+def main_clean(api, env):
     """Cleans the mb files in the workspace.
     
     Arguments:
         workspace {Path} -- Path to the workspace to clean.
         env {Bool} -- Clean the environment out as well.
     """
-    arg_workspace = Path(workspace).resolve()
-    pipeline_filepath = Path(arg_workspace, INSOURCE_PIPELINE_FILENAME).resolve()
+    workspace = api.settings.workspace
+    pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 
     # TODO(matthew): validate there exists a pipeline file before doing any
     #  actions that require a workspace (not just clean).  Should show an
@@ -35,7 +35,7 @@ def main_clean(workspace, env):
         logging.debug(f"pipeline.clean:\n{pipeline_clean}")
 
     if pipeline_clean:
-        root_path = arg_workspace
+        root_path = workspace
         clean_rules = pipeline_clean
 
         # Grab all files to clean found from all rules
@@ -52,7 +52,7 @@ def main_clean(workspace, env):
 
         # Actually remove all specified files
         for ffile in files_to_clean:
-            ffile_relpath = os.path.relpath(ffile, arg_workspace)
+            ffile_relpath = os.path.relpath(ffile, workspace)
             if ffile.is_dir():
                 shutil.rmtree(ffile)
                 print(f"Removed custom directory: {ffile_relpath}")

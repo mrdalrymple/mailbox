@@ -1,9 +1,16 @@
 from abc import ABC
 
+from libmailcd.constants import *
+
 import libmailcd.storage
+import libmailcd.env
+
+from pathlib import Path
+
 
 class API(ABC):
-    def __init__(self):
+    def __init__(self, settings):
+        self.settings = settings
         pass
 
     def store_add(self, storage_id, package):
@@ -42,3 +49,37 @@ class API(ABC):
 
     def store_download(self, storage_id, package_hash, target_path):
         libmailcd.storage.download(storage_id, package_hash, target_path)
+
+    def env_get(self, config):
+        if not config:
+            raise ValueError("config")
+
+        mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
+        mb_env_path = Path(self.settings.workspace, mb_env_relpath).resolve()
+
+        config_filepath = Path(mb_env_path, config).resolve()
+        if not config_filepath.exists():
+            raise FileNotFoundError()
+
+        contents = libmailcd.env.load_env_config(config_filepath)
+
+        return contents
+
+    def env_get_selected_config(self):
+        selected_config = None
+
+        mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
+        mb_env_path = Path(self.settings.workspace, mb_env_relpath).resolve()
+        selected_config = libmailcd.env.get_selected_config(mb_env_path)
+
+
+        return selected_config
+
+    def env_get_environments(self):
+
+        mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
+        mb_env_path = Path(self.settings.workspace, mb_env_relpath).resolve()
+
+        environments = libmailcd.env.get_environments(mb_env_path)
+
+        return environments

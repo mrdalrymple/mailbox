@@ -11,11 +11,10 @@ from libmailcd.cli.main import main
 ########################################
 
 @main.command("pull")
-@click.option("--workspace", default=".")
 @click.pass_obj
-def main_pull(api, workspace):
-    arg_workspace = Path(workspace).resolve()
-    pipeline_filepath = Path(arg_workspace, INSOURCE_PIPELINE_FILENAME).resolve()
+def main_pull(api):
+    workspace = Path(api.settings.workspace).resolve()
+    pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
 

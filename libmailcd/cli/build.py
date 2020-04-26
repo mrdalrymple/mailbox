@@ -18,18 +18,16 @@ from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL
 ########################################
 
 @main.command("build")
-@click.option("--workspace", default=".")
 @click.pass_obj
-def main_build(api, workspace):
+def main_build(api):
     exit_code = 0
-    arg_workspace = Path(workspace).resolve()
+    workspace = api.settings.workspace
 
-    pipeline_filepath = Path(arg_workspace, INSOURCE_PIPELINE_FILENAME).resolve()
+    pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
     logging.debug(f"pipeline_filepath: {pipeline_filepath}")
 
-    arg_workspace = Path(workspace).resolve()
     mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(arg_workspace, mb_env_relpath).resolve()
+    mb_env_path = Path(workspace, mb_env_relpath).resolve()
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
     #logging.debug(f"pipeline:\n{pipeline}")
@@ -67,7 +65,7 @@ def main_build(api, workspace):
         #######################################
         if pipeline_inbox:
             print(f"========== INBOX ==========")
-            mb_inbox_env_vars = inbox_run(api, arg_workspace, pipeline_inbox)
+            mb_inbox_env_vars = inbox_run(api, workspace, pipeline_inbox)
             print(f"===========================")
         #######################################
 
@@ -127,10 +125,10 @@ def main_build(api, workspace):
                 logging.debug(f"{storage_id}")
                 rules = pipeline_outbox[storage_id]
                 logging.debug(f"rules={rules}")
-                root_path = arg_workspace
+                root_path = workspace
 
                 target_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME, storage_id)
-                target_path = Path(arg_workspace, target_relpath)
+                target_path = Path(workspace, target_relpath)
 
                 for rule in rules:
                     source, destination = rule.split("->")
