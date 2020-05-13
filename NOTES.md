@@ -22,6 +22,10 @@ Question: Do we want there to be a local cache of store information?
   - Do we make this like git remote?
 
 
+## API
+
+- Should have a flag / setting to be able to choose whether the external libraries get pulled into the local .mb directory or the system .mb directory
+- Should pull external libraries into heirarchy of repo name then folders per version/branch
 
 
 # CLI

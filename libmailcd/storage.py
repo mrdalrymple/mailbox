@@ -14,6 +14,8 @@ import libmailcd.errors
 
 INSOURCE_PIPELINE_FILENAME = 'pipeline.yml'
 
+# TODO(Matthew): Where should the base for STORAGE_ROOT be stored? I think it should be passed in.
+#  Maybe like a api init?  So people can overwrite it?
 STORAGE_ROOT = str(Path(Path.home(), ".mailcd", "storage"))
 STORAGE_DB_FILENAME = "db.yml"
 

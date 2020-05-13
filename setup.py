@@ -23,7 +23,9 @@ setup(
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=[
         'pyyaml',
-        'click'
+        'click',
+        'pygit2',
+        'yapsy'
     ],
     #scripts=['bin/mailcd.py']
     entry_points={

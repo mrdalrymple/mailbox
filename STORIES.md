@@ -6,7 +6,12 @@
 
 ## Bob
 - developer
-- makes changes when dependencies update
+- makes changes when dependencies update (dependency manager)
+
+## Linda
+- developer
+- works in a big organization
+- develops and manages company mb custom library
 
 # Stories
 
@@ -32,4 +37,11 @@ support newer tools by my application
 - FUTURE: Maybe make requirement that zips get saved in a db store
   - would need to create lookup logic
   - this would save space if user uploads same zip to a different package id
+
+## Library Plugin
+
+### Remove Currently Selected Library
+As [Linda], I would like to delete the currently selected library on my local workspace,
+so that I can re-add it as part of my testing.  When I delete the currently selected library,
+it should go back to the default until I select a new library or add one.
 

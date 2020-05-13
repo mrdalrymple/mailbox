@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 from pathlib import Path
 
 import click
@@ -70,7 +71,7 @@ def main_env_rm(api, ref):
         env_variable = ref
 
     mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings.workspace, mb_env_relpath).resolve()
+    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
 
     if env_variable:
         libmailcd.env.unset_variable(mb_env_path, env_variable, config)
@@ -87,7 +88,7 @@ def main_env_create(api, config):
         config {String} -- Name of the config to create.
     """
     mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings.workspace, mb_env_relpath).resolve()
+    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
 
     if libmailcd.env.is_environment(mb_env_path, config):
         print(f"Environment already exists: {config}")
@@ -105,13 +106,14 @@ def main_env_select(api, config):
         config {String} -- Name of the environment to select.
     """
     mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings.workspace, mb_env_relpath).resolve()
+    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
 
     if not libmailcd.env.is_environment(mb_env_path, config):
         print(f"Unknown environment: {config}")
         sys.exit(1)
 
     libmailcd.env.set_selected_config(mb_env_path, config)
+    logging.info(f"Selected config: {config}")
 
 @main_env.command("set")
 @click.argument("ref")
@@ -143,7 +145,7 @@ def main_env_set(api, ref, value):
         env_variable = ref
 
     mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings.workspace, mb_env_relpath).resolve()
+    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
 
     # Case #1 -- Fail out
     if config:

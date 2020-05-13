@@ -21,7 +21,7 @@ from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL
 @click.pass_obj
 def main_build(api):
     exit_code = 0
-    workspace = api.settings.workspace
+    workspace = api.settings().workspace
 
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
     logging.debug(f"pipeline_filepath: {pipeline_filepath}")

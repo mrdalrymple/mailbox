@@ -21,7 +21,7 @@ def main_clean(api, env):
         workspace {Path} -- Path to the workspace to clean.
         env {Bool} -- Clean the environment out as well.
     """
-    workspace = api.settings.workspace
+    workspace = api.settings().workspace
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 
     # TODO(matthew): validate there exists a pipeline file before doing any
