@@ -8,3 +8,5 @@ LOCAL_ENV_SELECT_FILENAME = ".selected"
 LOCAL_LIB_SELECT_FILENAME = ".selected"
 
 DEFAULT_ENV_CONFIG_NAME = "default" # Maybe this should be "develop"?
+
+DEFAULT_LIBRARY_NAME = 'default'

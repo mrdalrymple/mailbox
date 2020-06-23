@@ -8,10 +8,7 @@ import click
 import libmailcd.library
 from libmailcd.cli.main import main
 
-
-MAILCD_CONFIG_ROOT = str(Path(Path.home(), ".mailcd"))
-MAILCD_LIBRARY_ROOT = Path(MAILCD_CONFIG_ROOT, "library")
-MAILCD_LIBRARY_DEFAULT = 'default'
+from libmailcd.constants import DEFAULT_LIBRARY_NAME
 
 
 ########################################
@@ -24,8 +21,8 @@ def main_library():
 @click.argument("config", required=False)
 @click.pass_obj
 def main_library_ls(api, config):
-    libraries = [ MAILCD_LIBRARY_DEFAULT ]
-    library_root = Path(MAILCD_LIBRARY_ROOT)
+    libraries = [ DEFAULT_LIBRARY_NAME ]
+    library_root = Path(api.settings("library_root"))
     selected = None
 
     # Find installed libraries
@@ -50,7 +47,7 @@ def main_library_ls(api, config):
 
     # If no libraries installed, or none of them are selected, select the default
     if not selected:
-        selected = MAILCD_LIBRARY_DEFAULT
+        selected = DEFAULT_LIBRARY_NAME
 
     for lib in libraries:
         if lib == selected:
@@ -64,12 +61,13 @@ def main_library_ls(api, config):
 def main_library_rm(api, library):
     library_name = library
     library_found = False
+    library_root = Path(api.settings("library_root"))
 
-    if library_name == MAILCD_LIBRARY_DEFAULT:
+    if library_name == DEFAULT_LIBRARY_NAME:
         print(f"Invalid library: cannot remove the default library")
         sys.exit(1)
 
-    installed_libraries = libmailcd.library.get_installed_libraries(MAILCD_LIBRARY_ROOT)
+    installed_libraries = libmailcd.library.get_installed_libraries(library_root)
     if installed_libraries:
         if library in installed_libraries:
             library_found = True
@@ -79,11 +77,11 @@ def main_library_rm(api, library):
         sys.exit(1)
 
     # Special Case: if library to remove is currently selected, select the default
-    current_selected = libmailcd.library.get_selected(MAILCD_LIBRARY_ROOT)
+    current_selected = libmailcd.library.get_selected(library_root)
     if current_selected and current_selected == library:
-        libmailcd.library.set_selected(MAILCD_LIBRARY_ROOT, MAILCD_LIBRARY_DEFAULT)
+        libmailcd.library.set_selected(library_root, DEFAULT_LIBRARY_NAME)
 
-    libmailcd.library.remove(MAILCD_LIBRARY_ROOT, library_name)
+    libmailcd.library.remove(library_root, library_name)
 
 @main_library.command("add")
 @click.argument("url")
@@ -95,24 +93,27 @@ def main_library_add(api, url, name, ref):
     if not library_name:
         library_name = libmailcd.library.url_to_name(url)
 
+    library_root = Path(api.settings("library_root"))
+
     # NOTE(matthew): If library already exists, we could offer an overwrite feature/flag.
     #  We could also have interactive "already exists, overwrite (Y/n)" prompt.
     #   If we go this route, we should do more validation that library url is same.
     #  Until a real use-case shows up, don't go the overwrite approach; let the user
     #   remove it first.
-    if libmailcd.library.exists(MAILCD_LIBRARY_ROOT, library_name):
+    if libmailcd.library.exists(library_root, library_name):
         print(f"Library already exists: {library_name}")
         sys.exit(1)
 
-    libmailcd.library.add(MAILCD_LIBRARY_ROOT, url, library_name)
+    libmailcd.library.add(library_root, url, library_name)
 
 @main_library.command("select")
 @click.argument("library")
 @click.pass_obj
 def main_library_select(api, library):
     library_name = library
-    all_libraries = [ MAILCD_LIBRARY_DEFAULT ]
+    all_libraries = [ DEFAULT_LIBRARY_NAME ]
     library_found = False
+    library_root = Path(api.settings("library_root"))
 
     # Handle case where MB_LIBRARY env. variable is set (should not be able to change selection)
     # NOTE(matthew): Or is this not the case?  What do we do when env. variable set and we init but it is not the current selected?
@@ -126,7 +127,7 @@ def main_library_select(api, library):
         print(f"Error: unable to change selection while 'MB_LIBRARY' is set")
         sys.exit(1)
 
-    installed_libraries = libmailcd.library.get_installed_libraries(MAILCD_LIBRARY_ROOT)
+    installed_libraries = libmailcd.library.get_installed_libraries(library_root)
     logging.debug(f"installed_libraries={installed_libraries}")
 
     all_libraries.extend(installed_libraries)
@@ -137,5 +138,5 @@ def main_library_select(api, library):
         print(f"Unknown library: {library_name}")
         sys.exit(1)
 
-    libmailcd.library.set_selected(MAILCD_LIBRARY_ROOT, library_name)
+    libmailcd.library.set_selected(library_root, library_name)
     logging.info(f"Selected library: {library_name}")

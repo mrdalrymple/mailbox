@@ -7,7 +7,7 @@ import click
 
 import libmailcd.utils
 import libmailcd.env
-from libmailcd.constants import LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME, LOCAL_ENV_SELECT_FILENAME, DEFAULT_ENV_CONFIG_NAME
+from libmailcd.constants import DEFAULT_ENV_CONFIG_NAME
 from libmailcd.cli.common.workflow import inbox_run
 from libmailcd.cli.main import main
 
@@ -70,8 +70,7 @@ def main_env_rm(api, ref):
     except ValueError:
         env_variable = ref
 
-    mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
+    mb_env_path = api.settings("environment_root")
 
     if env_variable:
         libmailcd.env.unset_variable(mb_env_path, env_variable, config)
@@ -87,8 +86,7 @@ def main_env_create(api, config):
     Arguments:
         config {String} -- Name of the config to create.
     """
-    mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
+    mb_env_path = api.settings("environment_root")
 
     if libmailcd.env.is_environment(mb_env_path, config):
         print(f"Environment already exists: {config}")
@@ -105,8 +103,7 @@ def main_env_select(api, config):
     Arguments:
         config {String} -- Name of the environment to select.
     """
-    mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
+    mb_env_path = api.settings("environment_root")
 
     if not libmailcd.env.is_environment(mb_env_path, config):
         print(f"Unknown environment: {config}")
@@ -144,12 +141,11 @@ def main_env_set(api, ref, value):
     except ValueError:
         env_variable = ref
 
-    mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(api.settings().workspace, mb_env_relpath).resolve()
+    mb_env_path = api.settings("environment_root")
 
     # Case #1 -- Fail out
     if config:
-        config_filepath = Path(mb_env_relpath, config).resolve()
+        config_filepath = Path(mb_env_path, config).resolve()
         if not config_filepath.exists():
             print(f"Unknown environment: {config}  (see mb env create)")
             sys.exit(2)

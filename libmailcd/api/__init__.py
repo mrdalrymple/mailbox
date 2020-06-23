@@ -3,15 +3,20 @@ from .interface import IAPIEvents
 from .default import DefaultAPI
 
 class API(IAPIEvents):
-    def __init__(self, default_api, custom_api = None):
+    def __init__(self, default_api, custom_api=None):
         if not default_api:
             raise ValueError(f"Invalid Argument: default_api ({default_api})")
 
         self.default_api = default_api
         self.custom_api = custom_api
 
-    def settings(self):
-        return self.default_api.settings
+    def settings(self, key=None):
+        setting = None
+        if key:
+            setting = getattr(self.default_api.settings, key)
+        else:
+            setting = self.default_api.settings
+        return setting
 
     def on_init(self):
         if self.custom_api and hasattr(self.custom_api, 'on_init'):

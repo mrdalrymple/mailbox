@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 
 from libmailcd.cli.main import main
-from libmailcd.constants import LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME
+from libmailcd.constants import LOCAL_INBOX_DIRNAME
 import libmailcd.storage
 
 ########################################
@@ -175,8 +175,8 @@ def main_store_get(api, ref, labels):
 
         # need a current workspace (cwd)
         # calculate target directory
-        target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
-        target_path = Path(api.setting.workspace, target_relpath)
+        target_relpath = Path(api.settings("local_root_relative"), LOCAL_INBOX_DIRNAME, storage_id, package_hash)
+        target_path = Path(api.settings("workspace"), target_relpath)
 
         # find package
         api.store_download(storage_id, package_hash, target_path)
@@ -197,8 +197,8 @@ def main_store_get(api, ref, labels):
 
         package_hash = matches[0]
 
-        target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
-        target_path = Path(Path.cwd(), target_relpath)
+        target_relpath = Path(api.settings("local_root_relative"), LOCAL_INBOX_DIRNAME, storage_id, package_hash)
+        target_path = Path(api.settings("workspace"), target_relpath)
         api.store_download(storage_id, package_hash, target_path)
         print(f"Package downloaded: '{target_relpath}'")
     # Case: no package hash, no labels, what do? Error?

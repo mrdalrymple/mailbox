@@ -13,7 +13,7 @@ from libmailcd.cli.main import main
 @main.command("pull")
 @click.pass_obj
 def main_pull(api):
-    workspace = Path(api.settings().workspace).resolve()
+    workspace = api.settings("workspace")
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)

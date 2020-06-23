@@ -13,7 +13,8 @@ import libmailcd.workflow
 import libmailcd.env
 from libmailcd.cli.common.workflow import inbox_run
 from libmailcd.cli.main import main
-from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME, LOCAL_ENV_DIRNAME
+from libmailcd.constants import INSOURCE_PIPELINE_FILENAME
+from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 
 ########################################
 
@@ -21,19 +22,16 @@ from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL
 @click.pass_obj
 def main_build(api):
     exit_code = 0
-    workspace = api.settings().workspace
+    workspace = api.settings("workspace")
 
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
     logging.debug(f"pipeline_filepath: {pipeline_filepath}")
 
-    mb_env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-    mb_env_path = Path(workspace, mb_env_relpath).resolve()
+    mb_env_path = api.settings("environment_root")
+    mb_local_root = api.settings("local_root")
+    workspace_outbox_path = Path(mb_local_root, LOCAL_OUTBOX_DIRNAME).resolve()
 
     pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
-    #logging.debug(f"pipeline:\n{pipeline}")
-
-    workspace_outbox_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME)
-    workspace_outbox_path = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME).resolve()
 
     pipeline_inbox = None
     if 'inbox' in pipeline:
@@ -127,8 +125,7 @@ def main_build(api):
                 logging.debug(f"rules={rules}")
                 root_path = workspace
 
-                target_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME, storage_id)
-                target_path = Path(workspace, target_relpath)
+                target_path = Path(workspace_outbox_path, storage_id)
 
                 for rule in rules:
                     source, destination = rule.split("->")

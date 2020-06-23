@@ -6,7 +6,9 @@ import shutil
 import click
 
 import libmailcd.utils
-from libmailcd.constants import INSOURCE_PIPELINE_FILENAME, LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, LOCAL_OUTBOX_DIRNAME, LOCAL_ENV_DIRNAME
+from libmailcd.constants import INSOURCE_PIPELINE_FILENAME
+from libmailcd.constants import LOCAL_INBOX_DIRNAME
+from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 from libmailcd.cli.main import main
 
 ########################################
@@ -21,7 +23,7 @@ def main_clean(api, env):
         workspace {Path} -- Path to the workspace to clean.
         env {Bool} -- Clean the environment out as well.
     """
-    workspace = api.settings().workspace
+    workspace = api.settings("workspace")
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 
     # TODO(matthew): validate there exists a pipeline file before doing any
@@ -60,8 +62,10 @@ def main_clean(api, env):
                 ffile.unlink()
                 print(f"Removed custom file: {ffile_relpath}")
 
-    inbox_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME)
-    outbox_relpath = Path(LOCAL_MB_ROOT, LOCAL_OUTBOX_DIRNAME)
+    local_mb_relpath = api.settings("local_root_relative")
+
+    inbox_relpath = Path(local_mb_relpath, LOCAL_INBOX_DIRNAME)
+    outbox_relpath = Path(local_mb_relpath, LOCAL_OUTBOX_DIRNAME)
 
     inbox_path = Path(workspace, inbox_relpath).resolve()
     outbox_path = Path(workspace, outbox_relpath).resolve()
@@ -75,8 +79,8 @@ def main_clean(api, env):
         print(f"Removed local outbox ({outbox_relpath})...")
 
     if env:
-        env_relpath = Path(LOCAL_MB_ROOT, LOCAL_ENV_DIRNAME)
-        env_path = Path(workspace, env_relpath).resolve()
+        env_relpath = api.settings("environment_root_relative")
+        env_path = api.settings("environment_root")
         if env_path.exists():
             shutil.rmtree(env_path)
             print(f"Removed local env ({env_relpath})...")
