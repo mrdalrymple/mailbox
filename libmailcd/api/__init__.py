@@ -26,6 +26,16 @@ class API(IAPIEvents):
 
     ########################################
 
+    def __getattr__(self, name):
+        if self.custom_api and hasattr(self.custom_api, name):
+            return getattr(self.custom_api, name)
+        elif self.default_api and hasattr(self.default_api, name):
+            return getattr(self.default_api, name)
+
+        return self.__getattribute__(name)
+
+    ########################################
+
     def store_add(self, storage_id, package):
         package_hash = None
         if self.custom_api and hasattr(self.custom_api, 'store_add'):
