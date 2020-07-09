@@ -6,3 +6,4 @@ from .environment import *
 from .pull import *
 from .store import *
 from .library import *
+from .credential import *

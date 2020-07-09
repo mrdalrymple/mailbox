@@ -134,6 +134,9 @@ def load_yaml(yaml_file):
 
     return contents
 
-def save_yaml(yaml_file, data):
+def save_yaml(yaml_file, data, indent=None):
     with open(yaml_file, 'w') as stream:
-        yaml.dump(data, stream, default_flow_style=False)
+        if indent:
+            yaml.dump(data, stream, default_flow_style=False, indent=indent)
+        else:
+            yaml.dump(data, stream, default_flow_style=False)

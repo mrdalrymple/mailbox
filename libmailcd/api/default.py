@@ -6,6 +6,7 @@ from libmailcd.constants import LOCAL_MB_ROOT
 
 import libmailcd.storage
 import libmailcd.env
+import libmailcd.cred
 
 from pathlib import Path
 
@@ -17,6 +18,28 @@ class DefaultAPI(IAPIEvents):
 
     def on_init(self):
         pass
+
+    ########################################
+
+    def cred_get_ids(self):
+        mb_config_path = self.settings.config_root
+        cred_ids = libmailcd.cred.get_ids(mb_config_path)
+        return cred_ids
+
+    # NOTE(matthew): This secrets framework just uses a KVP dict (no need to
+    #  specify 'username' 'password' 'token' etc as hard-coded strings)
+    def cred_set(self, cred_id, **kwargs):
+        mb_config_path = self.settings.config_root
+        libmailcd.cred.set_cred(mb_config_path, cred_id, **kwargs)
+
+    def cred_unset(self, cred_id):
+        mb_config_path = self.settings.config_root
+        libmailcd.cred.unset_cred(mb_config_path, cred_id)
+
+    def cred_exists(self, cred_id):
+        mb_config_path = self.settings.config_root
+        exists = libmailcd.cred.exists(mb_config_path, cred_id)
+        return exists
 
     ########################################
 

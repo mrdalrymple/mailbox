@@ -25,7 +25,9 @@ setup(
         'pyyaml',
         'click',
         'pygit2',
-        'yapsy'
+        'yapsy',
+        'keyring',
+        'cryptography'
     ],
     #scripts=['bin/mailcd.py']
     entry_points={
