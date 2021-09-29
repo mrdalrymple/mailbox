@@ -22,38 +22,45 @@ from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 @click.pass_obj
 def main_build(api):
     exit_code = 0
-    workspace = api.settings("workspace")
-
-    pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
-    logging.debug(f"pipeline_filepath: {pipeline_filepath}")
-
-    mb_env_path = api.settings("environment_root")
-    mb_local_root = api.settings("local_root")
-    workspace_outbox_path = Path(mb_local_root, LOCAL_OUTBOX_DIRNAME).resolve()
-
-    pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
-
-    pipeline_inbox = None
-    if 'inbox' in pipeline:
-        pipeline_inbox = pipeline['inbox']
-        logging.debug(f"pipeline.inbox:\n{pipeline_inbox}")
-
-    pipeline_outbox = None
-    if 'outbox' in pipeline:
-        pipeline_outbox = pipeline['outbox']
-        logging.debug(f"pipeline.outbox:\n{pipeline_outbox}")
-
-    pipeline_stages = None
-    if 'stages' in pipeline:
-        pipeline_stages = pipeline['stages']
-        logging.debug(f"pipeline.stages:\n{pipeline_stages}")
-
-    # TODO(matthew): Should we clean up the outbox here? for now, yes...
-    if workspace_outbox_path.exists():
-        # TODO(matthew): what about the case where this isn't a directory?
-        shutil.rmtree(workspace_outbox_path)
 
     try:
+        workspace = api.settings("workspace")
+        logging.debug(f"workspace: {workspace}")
+
+        pipeline_filepath_rel = Path(workspace, INSOURCE_PIPELINE_FILENAME)
+        pipeline_filepath = pipeline_filepath_rel.resolve()
+        logging.debug(f"pipeline_filepath: {pipeline_filepath}")
+
+        if not pipeline_filepath.is_file():
+            raise ValueError(f"no pipeline found: {INSOURCE_PIPELINE_FILENAME} ({workspace})")
+
+        mb_env_path = api.settings("environment_root")
+        logging.debug(f"env_root: {mb_env_path}")
+        mb_local_root = api.settings("local_root")
+        workspace_outbox_path = Path(mb_local_root, LOCAL_OUTBOX_DIRNAME).resolve()
+
+        pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
+
+        pipeline_inbox = None
+        if 'inbox' in pipeline:
+            pipeline_inbox = pipeline['inbox']
+            logging.debug(f"pipeline.inbox:\n{pipeline_inbox}")
+
+        pipeline_outbox = None
+        if 'outbox' in pipeline:
+            pipeline_outbox = pipeline['outbox']
+            logging.debug(f"pipeline.outbox:\n{pipeline_outbox}")
+
+        pipeline_stages = None
+        if 'stages' in pipeline:
+            pipeline_stages = pipeline['stages']
+            logging.debug(f"pipeline.stages:\n{pipeline_stages}")
+
+        # TODO(matthew): Should we clean up the outbox here? for now, yes...
+        if workspace_outbox_path.exists():
+            # TODO(matthew): what about the case where this isn't a directory?
+            shutil.rmtree(workspace_outbox_path)
+
         loaded_env = []
         env_vars = []
         mb_inbox_env_vars = {}
@@ -199,6 +206,9 @@ def main_build(api):
     except libmailcd.errors.StorageIdNotFoundError as e:
         print(f"{e}")
         exit_code = 1
+    except ValueError as e:
+        print(f"{e}")
+        exit_code = 4
     except Exception as e:
         print(f"{e}")
         traceback.print_exc()
