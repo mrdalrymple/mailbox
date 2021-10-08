@@ -11,12 +11,75 @@ import click
 import libmailcd.utils
 import libmailcd.workflow
 import libmailcd.env
+import libmailcd.pipeline
 from libmailcd.cli.common.workflow import inbox_run
+from libmailcd.cli.tools import agent
 from libmailcd.cli.main import main
 from libmailcd.constants import INSOURCE_PIPELINE_FILENAME
 from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 
 ########################################
+
+def pipeline_set_env(mb_inbox_env_vars, mb_env_path):
+    env_vars = []
+    loaded_env = []
+    # Note: Order matters here! Should inbox overwrite loaded env? Or vice versa?
+    # For now, we prefer loaded env over inbox env vars.  This should give users
+    #  the ability to load envs that overwrite the normal behavior.  However, this
+    #  case really shouldn't happen, but we should still make a decision here.
+    # I haven't thought this through enough, and could be persuaded either way.
+
+    for key, value in mb_inbox_env_vars.items():
+        os.environ[key] = value
+
+    loaded_env = libmailcd.env.get_variables(mb_env_path)
+    for key, value in loaded_env.items():
+        os.environ[key] = value
+
+    # Keep a list of all the variables we've set (use case? not sure yet)
+    env_vars.extend(mb_inbox_env_vars.keys())
+    env_vars.extend(loaded_env.keys())
+
+    return env_vars
+
+def pipeline_process_stage(stage, stage_name):
+    print(f"> Starting Stage: {stage_name}")
+
+    if 'node' not in stage:
+        raise ValueError(f"No 'node' block in stage: {stage_name}")
+
+    node = agent.factory(stage['node'])
+
+    if 'steps' in stage:
+        stage_steps = stage['steps']
+
+        with node:
+            for step in stage_steps:
+                step = step.strip()
+                print(f"{stage_name}> {step}")
+                result = node.run_step(step)
+
+                print(f"?={result.returncode}")
+                print(result.stdout)
+
+def pipeline_process(env_vars, pipeline_stages):
+    # TODO(Matthew): Should do a schema validation here (or up a level) first,
+    #  so we can give line numbers for issues to the end user.
+
+    # Run main stage:
+    # for now just print env variables
+    if env_vars:
+        print(f"======= ENVIRONMENT =======")
+        for ev in env_vars:
+            print(f" {ev}={os.environ[ev]}")
+
+    if pipeline_stages:
+        print(f"========== STAGES ==========")
+        for stage_name in pipeline_stages:
+            stage = pipeline_stages[stage_name]
+            pipeline_process_stage(stage, stage_name)
+
+##########################
 
 @main.command("build")
 @click.pass_obj
@@ -39,96 +102,45 @@ def main_build(api):
         mb_local_root = api.settings("local_root")
         workspace_outbox_path = Path(mb_local_root, LOCAL_OUTBOX_DIRNAME).resolve()
 
-        pipeline = libmailcd.utils.load_yaml(pipeline_filepath)
 
-        pipeline_inbox = None
-        if 'inbox' in pipeline:
-            pipeline_inbox = pipeline['inbox']
-            logging.debug(f"pipeline.inbox:\n{pipeline_inbox}")
-
-        pipeline_outbox = None
-        if 'outbox' in pipeline:
-            pipeline_outbox = pipeline['outbox']
-            logging.debug(f"pipeline.outbox:\n{pipeline_outbox}")
-
-        pipeline_stages = None
-        if 'stages' in pipeline:
-            pipeline_stages = pipeline['stages']
-            logging.debug(f"pipeline.stages:\n{pipeline_stages}")
+        pipeline_dict = libmailcd.utils.load_yaml(pipeline_filepath)
+        pipeline = libmailcd.pipeline.Pipeline.from_dict(pipeline_dict)
 
         # TODO(matthew): Should we clean up the outbox here? for now, yes...
         if workspace_outbox_path.exists():
             # TODO(matthew): what about the case where this isn't a directory?
             shutil.rmtree(workspace_outbox_path)
 
-        loaded_env = []
         env_vars = []
         mb_inbox_env_vars = {}
 
         #######################################
         #               INBOX                 #
         #######################################
-        if pipeline_inbox:
+
+        if pipeline.inbox:
             print(f"========== INBOX ==========")
-            mb_inbox_env_vars = inbox_run(api, workspace, pipeline_inbox)
-            print(f"===========================")
-        #######################################
-
-        # Note: Order matters here! Should inbox overwrite loaded env? Or vice versa?
-        # For now, we prefer loaded env over inbox env vars.  This should give users
-        #  the ability to load envs that overwrite the normal behavior.  However, this
-        #  case really shouldn't happen, but we should still make a decision here.
-        # I haven't thought this through enough, and could be persuaded either way.
-
-        for key, value in mb_inbox_env_vars.items():
-            os.environ[key] = value
-
-        loaded_env = libmailcd.env.get_variables(mb_env_path)
-        for key, value in loaded_env.items():
-            os.environ[key] = value
-
-        # Keep a list of all the variables we've set (use case? not sure yet)
-        env_vars.extend(mb_inbox_env_vars.keys())
-        env_vars.extend(loaded_env.keys())
-
+            mb_inbox_env_vars = inbox_run(api, workspace, pipeline.inbox)
 
         #######################################
         #             PROCESSING              #
         #######################################
 
-        # Run main stage:
-        # for now just print env variables
-        if env_vars:
-            print(f"ENV:")
-            for ev in env_vars:
-                print(f" {ev}={os.environ[ev]}")
+        env_vars = pipeline_set_env(mb_inbox_env_vars, mb_env_path)
 
-        if pipeline_stages:
-            for stage_name in pipeline_stages:
-                print(f"Stage: {stage_name}")
-                stage = pipeline_stages[stage_name]
-
-                if 'steps' in stage:
-                    stage_steps = stage['steps']
-
-                    for step in stage_steps:
-                        print(f"{stage_name}: {step}")
-                        os.system(step)
-
-        #######################################
-
+        pipeline_process(env_vars, pipeline.stages)
 
         #######################################
         #               OUTBOX                #
         #######################################
 
-        if pipeline_outbox:
+        if pipeline.outbox:
             packages_to_upload = [] # all packages that need to be uploaded
             files_to_copy = [] # all the file copy rules
 
-            for storage_id in pipeline_outbox:
+            for storage_id in pipeline.outbox:
                 logging.debug(f"{storage_id}")
-                rules = pipeline_outbox[storage_id]
+                rules = pipeline.outbox[storage_id]
                 logging.debug(f"rules={rules}")
                 root_path = workspace
 

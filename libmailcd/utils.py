@@ -38,14 +38,24 @@ def hash_file(filepath):
                     relfilepath_sha = hashlib.sha1(relfilepath_bytes)
                     content_hash.update(relfilepath_sha.digest())
 
-                    with zfile.open(name) as f:
+                    # Note: ZipFile.open() already opens it as a binary format (not text)
+                    with zfile.open(name, mode='r') as f:
                         while True:
                             buf = f.read(4096)
                             if not buf:
                                 break
                             mysha = hashlib.sha1(buf)
                             content_hash.update(mysha.digest())
-
+    elif os.path.isfile(filepath):
+        with open(filepath, 'rb') as f:
+            while True:
+                buf = f.read(4096)
+                if not buf:
+                    break
+                mysha = hashlib.sha1(buf)
+                content_hash.update(mysha.digest())
+    else:
+        raise ValueError(f"File to hash isn't a file: {filepath}")
 
     return content_hash.hexdigest()
 
