@@ -114,8 +114,9 @@ def get_variables(mb_env_path, config=None):
     else:
         selected_config = get_selected_config(mb_env_path)
 
-    config_filepath = Path(mb_env_path, selected_config).resolve()
-    if config_filepath.exists():
-        variables = load_env_config(config_filepath)
+    if Path(mb_env_path).resolve().exists():
+        config_filepath = Path(mb_env_path, selected_config).resolve()
+        if config_filepath.exists():
+            variables = load_env_config(config_filepath)
 
     return variables
