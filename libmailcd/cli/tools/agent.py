@@ -63,7 +63,7 @@ def factory(node_dict):
     else:
         # This is getting gross, how to handle the docker cache system? Should not go into the library for sure.  Should be implemented at the cli / default API.  The whole node factory should be implemented by the cli.
 
-        stage_node_container_file = node_dict['container']
+        stage_node_container_file = node_dict['containerfile']
 
         # Should build container?
         container_hash = hash_file(stage_node_container_file)
