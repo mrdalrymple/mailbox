@@ -6,9 +6,9 @@ import shutil
 import click
 
 import libmailcd.utils
-from libmailcd.constants import INSOURCE_PIPELINE_FILENAME
 from libmailcd.constants import LOCAL_INBOX_DIRNAME
 from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
+from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
 from libmailcd.cli.main import main
 
 ########################################

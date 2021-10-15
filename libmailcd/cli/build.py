@@ -15,8 +15,8 @@ import libmailcd.pipeline
 from libmailcd.cli.common.workflow import inbox_run
 from libmailcd.cli.tools import agent
 from libmailcd.cli.main import main
-from libmailcd.constants import INSOURCE_PIPELINE_FILENAME
-from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
+from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
+from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
 
 ########################################
 
@@ -42,7 +42,7 @@ def pipeline_set_env(mb_inbox_env_vars, mb_env_path):
 
     return env_vars
 
-def pipeline_process_stage(stage, stage_name):
+def pipeline_process_stage(stage, stage_name, logfilepath):
     print(f"> Starting Stage: {stage_name}")
 
     if 'node' not in stage:
@@ -50,19 +50,22 @@ def pipeline_process_stage(stage, stage_name):
 
     node = agent.factory(stage['node'])
 
-    if 'steps' in stage:
-        stage_steps = stage['steps']
+    logfilepath = logfilepath.resolve()
+    with open(logfilepath, 'w') as logfp:
+        if 'steps' in stage:
+            stage_steps = stage['steps']
 
-        with node:
-            for step in stage_steps:
-                step = step.strip()
-                print(f"{stage_name}> {step}")
-                result = node.run_step(step)
+            with node:
+                for step in stage_steps:
+                    step = step.strip()
+                    print(f"{stage_name}> {step}")
+                    result = node.run_step(step)
 
-                print(f"?={result.returncode}")
-                print(result.stdout)
+                    logfp.write(result.stdout)
+                    print(result.stdout)
+                    print(f"?={result.returncode}")
 
-def pipeline_process(env_vars, pipeline_stages):
+def pipeline_process(env_vars, pipeline_stages, logpath):
     # TODO(Matthew): Should do a schema validation here (or up a level) first,
     #  so we can give line numbers for issues to the end user.
 
@@ -77,7 +80,8 @@ def pipeline_process(env_vars, pipeline_stages):
         print(f"========== STAGES ==========")
         for stage_name in pipeline_stages:
             stage = pipeline_stages[stage_name]
-            pipeline_process_stage(stage, stage_name)
+            logfilepath = Path(logpath, f"{stage_name}{LOG_FILE_EXTENSION}")
+            pipeline_process_stage(stage, stage_name, logfilepath)
 
 ##########################
 
@@ -98,18 +102,24 @@ def main_build(api):
             raise ValueError(f"no pipeline found: {INSOURCE_PIPELINE_FILENAME} ({workspace})")
 
         mb_env_path = api.settings("environment_root")
-        logging.debug(f"env_root: {mb_env_path}")
-        mb_local_root = api.settings("local_root")
-        workspace_outbox_path = Path(mb_local_root, LOCAL_OUTBOX_DIRNAME).resolve()
-
+        mb_outbox_path = api.settings("outbox_root")
+        mb_logs_build_path = api.settings("logs_build_root")
 
         pipeline_dict = libmailcd.utils.load_yaml(pipeline_filepath)
         pipeline = libmailcd.pipeline.Pipeline.from_dict(pipeline_dict)
 
         # TODO(matthew): Should we clean up the outbox here? for now, yes...
-        if workspace_outbox_path.exists():
+        if mb_outbox_path.exists():
             # TODO(matthew): what about the case where this isn't a directory?
-            shutil.rmtree(workspace_outbox_path)
+            shutil.rmtree(mb_outbox_path)
+
+        # TODO(matthew): Should we clean up the logs here? for now, yes...
+        if mb_logs_build_path.exists():
+            # TODO(matthew): what about the case where this isn't a directory?
+            shutil.rmtree(mb_logs_build_path)
+
+        mb_logs_build_path.mkdir(parents=True, exist_ok=True)
+
 
         env_vars = []
         mb_inbox_env_vars = {}
@@ -128,7 +138,7 @@ def main_build(api):
 
         env_vars = pipeline_set_env(mb_inbox_env_vars, mb_env_path)
 
-        pipeline_process(env_vars, pipeline.stages)
+        pipeline_process(env_vars, pipeline.stages, logpath=mb_logs_build_path)
 
         #######################################
         #               OUTBOX                #
@@ -144,7 +154,7 @@ def main_build(api):
                 logging.debug(f"rules={rules}")
                 root_path = workspace
 
-                target_path = Path(workspace_outbox_path, storage_id)
+                target_path = Path(mb_outbox_path, storage_id)
 
                 for rule in rules:
                     source, destination = rule.split("->")

@@ -3,7 +3,7 @@ from pathlib import Path
 import click
 
 import libmailcd.utils
-from libmailcd.constants import INSOURCE_PIPELINE_FILENAME
+from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
 from libmailcd.cli.common.workflow import inbox_run
 from libmailcd.cli.main import main
 

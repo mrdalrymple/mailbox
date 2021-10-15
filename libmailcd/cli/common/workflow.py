@@ -5,8 +5,6 @@ from pathlib import Path
 import libmailcd.storage
 import libmailcd.errors
 
-from libmailcd.constants import LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME
-
 ########################################
 
 def inbox_run(api, workspace, pipeline_inbox):
@@ -47,9 +45,11 @@ def inbox_run(api, workspace, pipeline_inbox):
             storage_id = package['id']
             package_hash = package['hash']
             print(f"Downloading package: {storage_id}/{package_hash}")
+
             # need a current workspace (cwd)
             # calculate target directory
-            target_relpath = Path(LOCAL_MB_ROOT, LOCAL_INBOX_DIRNAME, storage_id, package_hash)
+            mb_inbox_relpath = api.settings("inbox_root_relative")
+            target_relpath = Path(mb_inbox_relpath, storage_id, package_hash)
             target_path = Path(workspace, target_relpath)
 
             # download to the target directory
