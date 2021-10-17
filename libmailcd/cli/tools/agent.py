@@ -8,6 +8,7 @@ from libmailcd.utils import hash_file
 from libmailcd.constants import PIPELINE_CONTAINERFILE_SEPARATOR
 from libmailcd.constants import PIPELINE_CONTAINERFILE_OS_WINDOWS
 from libmailcd.constants import PIPELINE_CONTAINERFILE_OS_LINUX
+from libmailcd.constants import AGENT_CONTAINER_WORKSPACE
 
 ##########################
 
@@ -42,8 +43,16 @@ class NodeInterface(ABC):
         pass
 
 class LocalNode(NodeInterface):
-    def __init__(self):
-        pass
+    def __init__(self, workspace):
+        self.workspace = workspace
+
+    def __enter__(self):
+        self._previous_cwd = os.getcwd()
+        os.chdir(self.workspace)
+
+    def __exit__(self):
+        os.chdir(self._previous_cwd)
+        self._previous_cwd = None
 
     def run_step(self, step):
         return _run_cmd([
@@ -52,12 +61,18 @@ class LocalNode(NodeInterface):
         ])
 
 class LocalDockerNode(LocalNode):
-    def __init__(self, image):
+    def __init__(self, image, host_workspace):
         self._handle = None
         self.image = image
+        self.host_workspace = host_workspace
+        self.container_workspace = AGENT_CONTAINER_WORKSPACE
 
     def __enter__(self):
-        self._handle = docker.start(self.image)
+        self._handle = docker.start(
+            self.image,
+            self.host_workspace,
+            self.container_workspace
+        )
 
     def __exit__(self, exc_type, exc_value, tb):
         if self._handle:
@@ -72,12 +87,16 @@ class LocalDockerLinuxNode(LocalDockerNode):
         return docker.linux_exec(self._handle, step)
 
 class LocalDockerWindowsNode(LocalDockerNode):
+    def __init__(self, image, host_workspace):
+        super().__init__(image, host_workspace)
+        self.container_workspace = f"C:{self.container_workspace}"
     def run_step(self, step):
         return docker.windows_exec(self._handle, step)
 
 ##########################
 
-def factory(node_dict):
+def factory(node_dict, workspace):
+    host_workspace = workspace
     if node_dict:
         # This is getting gross, how to handle the docker cache system? Should not go into the library for sure.  Should be implemented at the cli / default API.  The whole node factory should be implemented by the cli.
 
@@ -113,11 +132,11 @@ def factory(node_dict):
             pass
 
         if containerfile_os == "windows":
-            node = LocalDockerWindowsNode(container_hash)
+            node = LocalDockerWindowsNode(container_hash, host_workspace)
         else:
-            node = LocalDockerLinuxNode(container_hash)
+            node = LocalDockerLinuxNode(container_hash, host_workspace)
     else:
-        node = LocalNode()
+        node = LocalNode(host_workspace)
 
     return node
 

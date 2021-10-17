@@ -1,9 +1,8 @@
-import os
-import sys
 import logging
-import shutil
+import os
 from pathlib import Path
-
+import shutil
+import sys
 import traceback
 
 import click
@@ -20,10 +19,6 @@ from libmailcd.cli.main import main
 from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
 
 ########################################
-
-
-
-##########################
 
 @main.command("build")
 @click.pass_obj
@@ -87,7 +82,7 @@ def main_build(api):
 
         if pipeline.stages:
             print(f"========== STAGES ==========")
-            pipeline_stages_run(env_vars, pipeline.stages, logpath=mb_logs_build_path)
+            pipeline_stages_run(workspace.resolve(), pipeline.stages, logpath=mb_logs_build_path)
             show_footer = True
 
         #######################################

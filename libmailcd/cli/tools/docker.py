@@ -77,12 +77,14 @@ def build(dockerfile, label, os):
     ])
     _print_result(res)
 
-def start(image):
-    result = _run_cmd([
+def start(image, host_workspace, container_workspace):
+    result = _print_result(_run_cmd([
         "docker", "run",
+        f"-v", f"{host_workspace}:{container_workspace}",
+        "-w", container_workspace,
         "-td",
         f"{image}",
-    ])
+    ]))
     return result.stdout.strip()
 
 def stop(handle):

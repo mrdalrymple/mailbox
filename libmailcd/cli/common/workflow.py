@@ -175,13 +175,13 @@ def pipeline_set_env(mb_inbox_env_vars, mb_env_path):
 
     return env_vars
 
-def _pipeline_process_stage(stage, stage_name, logfilepath):
+def _pipeline_process_stage(workspace, stage, stage_name, logfilepath):
     print(f"> Starting Stage: {stage_name}")
 
     if 'node' not in stage:
         raise ValueError(f"No 'node' block in stage: {stage_name}")
 
-    node = agent.factory(stage['node'])
+    node = agent.factory(stage['node'], workspace)
 
     logfilepath = logfilepath.resolve()
     with open(logfilepath, 'w') as logfp:
@@ -199,11 +199,11 @@ def _pipeline_process_stage(stage, stage_name, logfilepath):
                     print(result_output)
                     print(f"?={result.returncode}")
 
-def pipeline_stages_run(env_vars, pipeline_stages, logpath):
+def pipeline_stages_run(workspace, pipeline_stages, logpath):
     # TODO(Matthew): Should do a schema validation here (or up a level) first,
     #  so we can give line numbers for issues to the end user.
 
     for stage_name in pipeline_stages:
         stage = pipeline_stages[stage_name]
         logfilepath = Path(logpath, f"{stage_name}{LOG_FILE_EXTENSION}")
-        _pipeline_process_stage(stage, stage_name, logfilepath)
+        _pipeline_process_stage(workspace, stage, stage_name, logfilepath)
