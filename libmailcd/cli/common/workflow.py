@@ -11,16 +11,16 @@ from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
 
 ########################################
 
-def pipeline_outbox_run(api, workspace, pipeline_outbox):
+def pipeline_outbox_run(api, pipeline_outbox):
     if not pipeline_outbox:
         raise ValueError("No outbox set")
 
     mb_outbox_path = api.settings("outbox_root")
+    root_path = api.settings("workspace")
 
     packages_to_upload = [] # all packages that need to be uploaded
     files_to_copy = [] # all the file copy rules
 
-    root_path = workspace
     for storage_id in pipeline_outbox:
         logging.debug(f"{storage_id}")
         rules = pipeline_outbox[storage_id]
@@ -88,7 +88,7 @@ def pipeline_outbox_run(api, workspace, pipeline_outbox):
         else:
             print(f" nothing to store for: {ptu.storage_id} (empty)")
 
-def pipeline_inbox_run(api, workspace, pipeline_inbox):
+def pipeline_inbox_run(api, pipeline_inbox):
     if not pipeline_inbox:
         raise ValueError("No inbox set")
 
@@ -124,6 +124,7 @@ def pipeline_inbox_run(api, workspace, pipeline_inbox):
     # Download all required packages
     if packages_to_download:
         mb_inbox_relpath = api.settings("inbox_root_relative")
+        mb_inbox_path = api.settings("inbox_root")
 
         # TODO(matthew): Do we need to optimize this to only actually download ones we don't already have
         for package in packages_to_download:
@@ -131,10 +132,9 @@ def pipeline_inbox_run(api, workspace, pipeline_inbox):
             package_hash = package['hash']
             print(f"Downloading package: {storage_id}/{package_hash}")
 
-            # need a current workspace (cwd)
             # calculate target directory
             target_relpath = Path(mb_inbox_relpath, storage_id, package_hash)
-            target_path = Path(workspace, target_relpath)
+            target_path = Path(mb_inbox_path, target_relpath)
 
             # download to the target directory
             libmailcd.storage.download(storage_id, package_hash, target_path)
@@ -143,18 +143,12 @@ def pipeline_inbox_run(api, workspace, pipeline_inbox):
     # set env vars
     for package in inbox_packages:
         env_var_name = f"MB_{storage_id}_ROOT"
-        env_var_value = str(target_path)
-        #os.environ[env_var_name] = env_var_value
-        #env_vars.append(env_var_name)
+        env_var_value = str(target_path.resolve())
         env_vars[env_var_name] = env_var_value
-        logging.debug(f"SET {env_var_name}={env_var_value}")
 
         env_var_name = f"MB_{storage_id}_ROOT_RELPATH"
         env_var_value = str(target_relpath)
-        #os.environ[env_var_name] = env_var_value
-        #env_vars.append(env_var_name)
         env_vars[env_var_name] = env_var_value
-        logging.debug(f"SET {env_var_name}={env_var_value}")
 
     return env_vars
 
@@ -172,6 +166,7 @@ def pipeline_set_env(mb_inbox_env_vars, mb_env_path):
 
     loaded_env = libmailcd.env.get_variables(mb_env_path)
     for key, value in loaded_env.items():
+        logging.debug(f"SET {key}={value}")
         os.environ[key] = value
 
     # Keep a list of all the variables we've set (use case? not sure yet)

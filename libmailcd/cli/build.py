@@ -71,7 +71,7 @@ def main_build(api):
 
         if pipeline.inbox:
             print(f"========== INBOX ==========")
-            mb_inbox_env_vars = pipeline_inbox_run(api, workspace, pipeline.inbox)
+            mb_inbox_env_vars = pipeline_inbox_run(api, pipeline.inbox)
             show_footer = True
 
         #######################################
@@ -96,7 +96,7 @@ def main_build(api):
 
         if pipeline.outbox:
             print(f"========== OUTBOX ==========")
-            pipeline_outbox_run(api, workspace, pipeline.outbox)
+            pipeline_outbox_run(api, pipeline.outbox)
             show_footer = True
 
         if show_footer:
