@@ -61,6 +61,7 @@ def main_build(api):
         mb_logs_build_path.mkdir(parents=True, exist_ok=True)
 
 
+        show_footer = False
         env_vars = []
         mb_inbox_env_vars = {}
 
@@ -71,21 +72,23 @@ def main_build(api):
         if pipeline.inbox:
             print(f"========== INBOX ==========")
             mb_inbox_env_vars = pipeline_inbox_run(api, workspace, pipeline.inbox)
+            show_footer = True
 
         #######################################
         #             PROCESSING              #
         #######################################
 
         env_vars = pipeline_set_env(mb_inbox_env_vars, mb_env_path)
-        # for now just print env variables
         if env_vars:
             print(f"======= ENVIRONMENT =======")
             for ev in env_vars:
                 print(f" {ev}={os.environ[ev]}")
+            show_footer = True
 
         if pipeline.stages:
             print(f"========== STAGES ==========")
             pipeline_stages_run(env_vars, pipeline.stages, logpath=mb_logs_build_path)
+            show_footer = True
 
         #######################################
         #               OUTBOX                #
@@ -94,9 +97,10 @@ def main_build(api):
         if pipeline.outbox:
             print(f"========== OUTBOX ==========")
             pipeline_outbox_run(api, workspace, pipeline.outbox)
+            show_footer = True
 
-
-        print(f"=============================")
+        if show_footer:
+            print(f"=============================")
 
         #######################################
     except libmailcd.errors.StorageMultipleFound as e:
