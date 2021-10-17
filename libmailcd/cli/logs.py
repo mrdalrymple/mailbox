@@ -5,8 +5,8 @@ import click
 
 from libmailcd.cli.main import main
 
-
 from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
+
 
 @main.command("logs")
 @click.argument("log", default=None, required=False)
@@ -36,7 +36,11 @@ def main_logs(api, log):
         if os.path.isfile(log_refpath_ext):
             with open(log_refpath_ext, encoding="utf-8") as file:
                 print(f"||||| {log_refpath_ext}")
-                for line in file.readlines():
+                # Note: need to use .read() with .splitlines() instead of
+                #  readlines() directly on the file objects. Otherwise we
+                #  print an extra line (bug with .readlines()?).
+                contents = file.read()
+                for line in contents.splitlines():
                     print(line)
                 print(f"||||| {log_refpath_ext}")
         else: # Found a category, show logs

@@ -1,14 +1,19 @@
 import subprocess
+import logging
+
+def _print_result_(result):
+    return result
 
 def _print_result(result):
-    print(f"CMD: " + " ".join(result.args))
-    print(f"RC: {result.returncode}")
+    logging.debug(f"CMD: " + " ".join(result.args))
+    logging.debug(f"RC: {result.returncode}")
     if result.stdout:
-        print(f"STDOUT:")
-        print(result.stdout)
+        logging.debug(f"STDOUT:")
+        logging.debug(result.stdout)
     if result.stderr:
-        print(f"STDERR:")
-        print(result.stderr)
+        logging.debug(f"STDERR:")
+        logging.debug(result.stderr)
+    return result
 
 def _run_cmd(args):
     result = subprocess.run(
@@ -36,40 +41,66 @@ def _images_from_output(output):
 
 ##########################
 
+import time
+
+def os_windows():
+    res = _run_cmd([
+        "C:\Program Files\Docker\Docker\dockercli.exe", # TODO(Matthew): need to detect where this is? or ask user to put it in path?
+        "-SwitchWindowsEngine"
+    ])
+
+    time.sleep(5) # TODO(Matthew): Need to find a way to query so we don't have to sleep
+    #_print_result(res)
+
+def os_linux():
+    res = _run_cmd([
+        "C:\Program Files\Docker\Docker\dockercli.exe",
+        "-SwitchLinuxEngine"
+    ])
+
+    time.sleep(5) # TODO(Matthew): Need to find a way to query so we don't have to sleep
+    #_print_result(res)
+
+##########################
+
 def images_get():
     result = _run_cmd(["docker", "images"])
     #_print_result(result)
     return _images_from_output(result.stdout)
 
-def build(dockerfile, label):
-    _run_cmd([
+def build(dockerfile, label, os):
+    res = _run_cmd([
         "docker", "build",
         "-f", f"{dockerfile}",
         "-t", f"{label}",
         "."
     ])
+    _print_result(res)
 
 def start(image):
-    if True:
-        result = _run_cmd([
-            "docker", "run",
-            "-td",
-            f"{image}",
-        ])
-        return result.stdout.strip()
-    else:
-        return "a777fd12"
+    result = _run_cmd([
+        "docker", "run",
+        "-td",
+        f"{image}",
+    ])
+    return result.stdout.strip()
 
 def stop(handle):
-    if True:
-        _run_cmd([
-            "docker", "stop",
-            f"{handle}"
-        ])
+    _run_cmd([
+        "docker", "stop",
+        f"{handle}"
+    ])
 
-def exec(handle, cmd):
-    return _run_cmd([
+def windows_exec(handle, cmd):
+    return _print_result(_run_cmd([
        "docker", "exec",
        f"{handle}",
        f"cmd", f"/c", f"{cmd}"
-    ])
+    ]))
+
+def linux_exec(handle, cmd):
+    return _print_result(_run_cmd([
+       "docker", "exec",
+       f"{handle}",
+       f"sh", "-c", f"{cmd}"
+    ]))

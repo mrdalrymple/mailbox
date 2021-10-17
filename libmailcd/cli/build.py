@@ -61,8 +61,9 @@ def pipeline_process_stage(stage, stage_name, logfilepath):
                     print(f"{stage_name}> {step}")
                     result = node.run_step(step)
 
-                    logfp.write(result.stdout)
-                    print(result.stdout)
+                    result_output = result.stdout.strip()
+                    logfp.write(result_output)
+                    print(result_output)
                     print(f"?={result.returncode}")
 
 def pipeline_process(env_vars, pipeline_stages, logpath):

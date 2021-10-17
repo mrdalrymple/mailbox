@@ -1,8 +1,13 @@
+import os
 import subprocess
+import logging
 
-#import libmailcd.cli.tools.docker as docker
 from libmailcd.cli.tools import docker
 from libmailcd.utils import hash_file
+
+from libmailcd.constants import PIPELINE_CONTAINERFILE_SEPARATOR
+from libmailcd.constants import PIPELINE_CONTAINERFILE_OS_WINDOWS
+from libmailcd.constants import PIPELINE_CONTAINERFILE_OS_LINUX
 
 ##########################
 
@@ -29,7 +34,14 @@ def _run_cmd(args):
 
 ##########################
 
-class LocalNode():
+from abc import ABC, abstractmethod
+
+class NodeInterface(ABC):
+    @abstractmethod
+    def run_step(self, step):
+        pass
+
+class LocalNode(NodeInterface):
     def __init__(self):
         pass
 
@@ -39,7 +51,7 @@ class LocalNode():
             f"{step}"
         ])
 
-class LocalDockerNode():
+class LocalDockerNode(LocalNode):
     def __init__(self, image):
         self._handle = None
         self.image = image
@@ -55,27 +67,57 @@ class LocalDockerNode():
     def run_step(self, step):
         return docker.exec(self._handle, step)
 
+class LocalDockerLinuxNode(LocalDockerNode):
+    def run_step(self, step):
+        return docker.linux_exec(self._handle, step)
+
+class LocalDockerWindowsNode(LocalDockerNode):
+    def run_step(self, step):
+        return docker.windows_exec(self._handle, step)
+
 ##########################
 
 def factory(node_dict):
-    if not node_dict:
-        node = LocalNode()
-    else:
+    if node_dict:
         # This is getting gross, how to handle the docker cache system? Should not go into the library for sure.  Should be implemented at the cli / default API.  The whole node factory should be implemented by the cli.
 
-        stage_node_container_file = node_dict['containerfile']
+        containerfile_ref = str(node_dict['containerfile'])
+
+        containerfile = containerfile_ref
+        containerfile_os = PIPELINE_CONTAINERFILE_OS_LINUX # set default to windows .. for now -- also should come in via settings
+
+        # If the user specified the OS, use it instead of the default
+        if PIPELINE_CONTAINERFILE_SEPARATOR in containerfile_ref:
+            containerfile_os, containerfile = containerfile_ref.split(PIPELINE_CONTAINERFILE_SEPARATOR)
 
         # Should build container?
-        container_hash = hash_file(stage_node_container_file)
-        #print(f"container_hash={container_hash}")
+        container_hash = hash_file(containerfile)
+        logging.debug(f"container_hash={container_hash}")
+
+        # TODO(Matthew): I think if you use the default dockerfile OS, but point to a wrong dockerfile, the error the user is not clear (and nothing actually fails).
+
+        if os.name == "nt":
+            # Windows supports Linux and Windows containers, but the Docker Desktop needs to switch modes before you can launch containers for that OS-type.
+            if containerfile_os == PIPELINE_CONTAINERFILE_OS_WINDOWS:
+                docker.os_windows()
+            else:
+                docker.os_linux()
+        else:
+            if containerfile_os == PIPELINE_CONTAINERFILE_OS_WINDOWS:
+                raise ValueError(f"Windows containers are not supported for this OS ({os.name}).")
 
         found_images = docker.images_get()
         if container_hash not in found_images:
-            print("Container not found, building...")
-            docker.build(stage_node_container_file, container_hash)
+            print(f"Container not found, building '{containerfile_os}{PIPELINE_CONTAINERFILE_SEPARATOR}{containerfile}' ({container_hash})")
+            docker.build(containerfile, container_hash, os=containerfile_os)
             pass
 
-        node = LocalDockerNode(container_hash)
+        if containerfile_os == "windows":
+            node = LocalDockerWindowsNode(container_hash)
+        else:
+            node = LocalDockerLinuxNode(container_hash)
+    else:
+        node = LocalNode()
 
     return node
 
