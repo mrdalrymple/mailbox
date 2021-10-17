@@ -4,7 +4,7 @@ import click
 
 import libmailcd.utils
 from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
-from libmailcd.cli.common.workflow import inbox_run
+from libmailcd.cli.common.workflow import pipeline_inbox_run
 from libmailcd.cli.main import main
 
 
@@ -23,4 +23,4 @@ def main_pull(api):
         pipeline_inbox = pipeline['inbox']
 
     if pipeline_inbox:
-        env_vars = inbox_run(api, workspace, pipeline_inbox)
+        env_vars = pipeline_inbox_run(api, workspace, pipeline_inbox)
