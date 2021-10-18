@@ -140,51 +140,43 @@ def pipeline_inbox_run(api, pipeline_inbox):
             libmailcd.storage.download(storage_id, package_hash, target_path)
             print(f" --> '{target_relpath}'")
 
-    # set env vars
+    # Set env variables that point to the inbox packages
     for package in inbox_packages:
         env_var_name = f"MB_{storage_id}_ROOT"
-        env_var_value = str(target_path.resolve())
-        env_vars[env_var_name] = env_var_value
-
-        env_var_name = f"MB_{storage_id}_ROOT_RELPATH"
         env_var_value = str(target_relpath)
         env_vars[env_var_name] = env_var_value
 
     return env_vars
 
 def pipeline_set_env(mb_inbox_env_vars, mb_env_path):
-    env_vars = []
-    loaded_env = []
     # Note: Order matters here! Should inbox overwrite loaded env? Or vice versa?
     # For now, we prefer loaded env over inbox env vars.  This should give users
     #  the ability to load envs that overwrite the normal behavior.  However, this
     #  case really shouldn't happen, but we should still make a decision here.
     # I haven't thought this through enough, and could be persuaded either way.
 
-    for key, value in mb_inbox_env_vars.items():
-        os.environ[key] = value
-
     loaded_env = libmailcd.env.get_variables(mb_env_path)
-    for key, value in loaded_env.items():
+
+    # Merge environment dicts
+    env_vars = {**mb_inbox_env_vars, **loaded_env}
+
+    # Set all variables into the environment
+    for key, value in env_vars.items():
         logging.debug(f"SET {key}={value}")
         os.environ[key] = value
 
-    # Keep a list of all the variables we've set (use case? not sure yet)
-    env_vars.extend(mb_inbox_env_vars.keys())
-    env_vars.extend(loaded_env.keys())
-
     return env_vars
 
-def _pipeline_process_stage(workspace, stage, stage_name, logfilepath):
+def _pipeline_process_stage(workspace, stage, stage_name, logpath, env):
     print(f"> Starting Stage: {stage_name}")
 
     if 'node' not in stage:
         raise ValueError(f"No 'node' block in stage: {stage_name}")
 
-    node = agent.factory(stage['node'], workspace)
+    node = agent.factory(stage['node'], workspace, env)
 
-    logfilepath = logfilepath.resolve()
-    with open(logfilepath, 'w') as logfp:
+    logpath = logpath.resolve()
+    with open(logpath, 'w') as logfp:
         if 'steps' in stage:
             stage_steps = stage['steps']
 
@@ -200,11 +192,17 @@ def _pipeline_process_stage(workspace, stage, stage_name, logfilepath):
                         print(result_output)
                     print(f"?={result.returncode}")
 
-def pipeline_stages_run(workspace, pipeline_stages, logpath):
+def pipeline_stages_run(workspace, pipeline_stages, logpath, env):
     # TODO(Matthew): Should do a schema validation here (or up a level) first,
     #  so we can give line numbers for issues to the end user.
 
     for stage_name in pipeline_stages:
         stage = pipeline_stages[stage_name]
         logfilepath = Path(logpath, f"{stage_name}{LOG_FILE_EXTENSION}")
-        _pipeline_process_stage(workspace, stage, stage_name, logfilepath)
+        _pipeline_process_stage(
+            workspace,
+            stage,
+            stage_name,
+            logpath=logfilepath,
+            env=env
+        )

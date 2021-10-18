@@ -61,17 +61,19 @@ class LocalNode(NodeInterface):
         ])
 
 class LocalDockerNode(LocalNode):
-    def __init__(self, image, host_workspace):
+    def __init__(self, image, host_workspace, env):
         self._handle = None
         self.image = image
         self.host_workspace = host_workspace
         self.container_workspace = AGENT_CONTAINER_WORKSPACE
+        self.env = env
 
     def __enter__(self):
         self._handle = docker.start(
             self.image,
             self.host_workspace,
-            self.container_workspace
+            self.container_workspace,
+            env=self.env
         )
 
     def __exit__(self, exc_type, exc_value, tb):
@@ -87,15 +89,15 @@ class LocalDockerLinuxNode(LocalDockerNode):
         return docker.linux_exec(self._handle, step)
 
 class LocalDockerWindowsNode(LocalDockerNode):
-    def __init__(self, image, host_workspace):
-        super().__init__(image, host_workspace)
+    def __init__(self, image, host_workspace, env):
+        super().__init__(image, host_workspace, env)
         self.container_workspace = f"C:{self.container_workspace}"
     def run_step(self, step):
         return docker.windows_exec(self._handle, step)
 
 ##########################
 
-def factory(node_dict, workspace):
+def factory(node_dict, workspace, env):
     host_workspace = workspace
     if node_dict:
         # This is getting gross, how to handle the docker cache system? Should not go into the library for sure.  Should be implemented at the cli / default API.  The whole node factory should be implemented by the cli.
@@ -132,9 +134,9 @@ def factory(node_dict, workspace):
             pass
 
         if containerfile_os == "windows":
-            node = LocalDockerWindowsNode(container_hash, host_workspace)
+            node = LocalDockerWindowsNode(container_hash, host_workspace, env)
         else:
-            node = LocalDockerLinuxNode(container_hash, host_workspace)
+            node = LocalDockerLinuxNode(container_hash, host_workspace, env)
     else:
         node = LocalNode(host_workspace)
 

@@ -82,7 +82,12 @@ def main_build(api):
 
         if pipeline.stages:
             print(f"========== STAGES ==========")
-            pipeline_stages_run(workspace.resolve(), pipeline.stages, logpath=mb_logs_build_path)
+            pipeline_stages_run(
+                workspace.resolve(),
+                pipeline.stages,
+                logpath=mb_logs_build_path,
+                env=env_vars
+            )
             show_footer = True
 
         #######################################

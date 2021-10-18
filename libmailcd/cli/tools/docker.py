@@ -77,14 +77,26 @@ def build(dockerfile, label, os):
     ])
     _print_result(res)
 
-def start(image, host_workspace, container_workspace):
-    result = _print_result(_run_cmd([
-        "docker", "run",
-        f"-v", f"{host_workspace}:{container_workspace}",
-        "-w", container_workspace,
-        "-td",
-        f"{image}",
-    ]))
+def start(image, host_workspace, container_workspace, env):
+    env_args = []
+
+    if env:
+        # Is this method sustainable? How many env variables can it take?
+        # Might need to switch to an environment file instead
+        for key, value in env.items():
+            env_args.append('-e')
+            env_args.append(f"{key}={value}")
+
+    result = _print_result(_run_cmd(
+        [
+            "docker", "run",
+            f"-v", f"{host_workspace}:{container_workspace}",
+            "-w", container_workspace
+        ] + env_args + [
+            "-td",
+            f"{image}",
+        ]
+    ))
     return result.stdout.strip()
 
 def stop(handle):
