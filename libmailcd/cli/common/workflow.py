@@ -195,8 +195,9 @@ def _pipeline_process_stage(workspace, stage, stage_name, logfilepath):
                     result = node.run_step(step)
 
                     result_output = result.stdout.strip()
-                    logfp.write(result_output)
-                    print(result_output)
+                    if result_output:
+                        logfp.write(result_output)
+                        print(result_output)
                     print(f"?={result.returncode}")
 
 def pipeline_stages_run(workspace, pipeline_stages, logpath):
