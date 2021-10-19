@@ -42,6 +42,10 @@ class NodeInterface(ABC):
     def run_step(self, step):
         pass
 
+    @abstractmethod
+    def get_env(self):
+        pass
+
 class LocalNode(NodeInterface):
     def __init__(self, workspace):
         self.workspace = workspace
@@ -58,6 +62,12 @@ class LocalNode(NodeInterface):
         return _run_cmd([
             "cmd", "/c",
             f"{step}"
+        ])
+
+    def get_env(self):
+        return _run_cmd([
+            "cmd", "/c",
+            f"SET"
         ])
 
 class LocalDockerNode(LocalNode):
@@ -81,19 +91,24 @@ class LocalDockerNode(LocalNode):
             docker.stop(self._handle)
         self._handle = None
 
-    def run_step(self, step):
-        return docker.exec(self._handle, step)
 
 class LocalDockerLinuxNode(LocalDockerNode):
     def run_step(self, step):
         return docker.linux_exec(self._handle, step)
 
+    def get_env(self):
+        return docker.linux_exec(self._handle, "set")
+
 class LocalDockerWindowsNode(LocalDockerNode):
     def __init__(self, image, host_workspace, env):
         super().__init__(image, host_workspace, env)
         self.container_workspace = f"C:{self.container_workspace}"
+
     def run_step(self, step):
         return docker.windows_exec(self._handle, step)
+
+    def get_env(self):
+        return docker.windows_exec(self._handle, "SET")
 
 ##########################
 

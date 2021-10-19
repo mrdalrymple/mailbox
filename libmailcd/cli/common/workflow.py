@@ -8,6 +8,7 @@ import libmailcd.errors
 
 from libmailcd.cli.tools import agent
 from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
+from libmailcd.cli.common.constants import ENV_LOG_FILE_EXTENSION
 
 ########################################
 
@@ -167,7 +168,7 @@ def pipeline_set_env(mb_inbox_env_vars, mb_env_path):
 
     return env_vars
 
-def _pipeline_process_stage(workspace, stage, stage_name, logpath, env):
+def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, env):
     print(f"> Starting Stage: {stage_name}")
 
     if 'node' not in stage:
@@ -176,11 +177,19 @@ def _pipeline_process_stage(workspace, stage, stage_name, logpath, env):
     node = agent.factory(stage['node'], workspace, env)
 
     logpath = logpath.resolve()
+    envlogpath = envlogpath.resolve()
     with open(logpath, 'w') as logfp:
         if 'steps' in stage:
             stage_steps = stage['steps']
 
             with node:
+                env_result = node.get_env()
+                with open(envlogpath, 'w') as envfp:
+                    env_output = env_result.stdout.strip()
+                    if env_output:
+                        envfp.write(env_output)
+                    pass
+                print(f"{env_result.stdout}")
                 for step in stage_steps:
                     step = step.strip()
                     print(f"{stage_name}> {step}")
@@ -199,10 +208,12 @@ def pipeline_stages_run(workspace, pipeline_stages, logpath, env):
     for stage_name in pipeline_stages:
         stage = pipeline_stages[stage_name]
         logfilepath = Path(logpath, f"{stage_name}{LOG_FILE_EXTENSION}")
+        envlogfilepath = Path(logpath, f"{stage_name}{ENV_LOG_FILE_EXTENSION}")
         _pipeline_process_stage(
             workspace,
             stage,
             stage_name,
             logpath=logfilepath,
+            envlogpath=envlogfilepath,
             env=env
         )
