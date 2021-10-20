@@ -40,16 +40,15 @@ def main_logs(api, log, env):
 
         # Found a specific log?
         if os.path.isfile(log_refpath_ext):
-            with open(log_refpath_ext, encoding="utf-8") as file:
-                print(f"||||| {log_refpath_ext} |||||")
+            print(f"||||| {log_refpath_ext} |||||")
+            with open(log_refpath_ext) as file:
                 # Note: need to use .read() with .splitlines() instead of
                 #  readlines() directly on the file objects. Otherwise we
                 #  print an extra line (bug with .readlines()?).
                 contents = file.read()
-                contents = contents.replace("\r\n", "\n")
-                for line in contents.splitlines():
-                    print(line)
-                print(f"||||| {log_refpath_ext} |||||")
+            for line in contents.splitlines():
+                print(line)
+            print(f"||||| {log_refpath_ext} |||||")
         else: # Found a category, show logs
             if os.path.isdir(log_refpath):
                 raw_files = os.listdir(log_refpath)

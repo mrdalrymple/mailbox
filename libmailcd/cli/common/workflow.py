@@ -185,9 +185,9 @@ def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, e
             with node:
                 env_result = node.get_env()
                 with open(envlogpath, 'w') as envfp:
-                    env_output = env_result.stdout.strip()
+                    env_output = env_result.stdout.strip().replace("\r\n", "\n")
                     if env_output:
-                        envfp.write(env_output)
+                        envfp.write(env_output + "\n")
                     pass
                 print(f"{env_result.stdout}")
                 for step in stage_steps:
@@ -195,9 +195,9 @@ def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, e
                     print(f"{stage_name}> {step}")
                     result = node.run_step(step)
 
-                    result_output = result.stdout.strip()
+                    result_output = result.stdout.strip().replace("\r\n", "\n")
                     if result_output:
-                        logfp.write(result_output)
+                        logfp.write(result_output + "\n")
                         print(result_output)
                     print(f"?={result.returncode}")
 
