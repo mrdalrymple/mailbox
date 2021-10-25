@@ -12,6 +12,44 @@ from libmailcd.cli.common.constants import ENV_LOG_FILE_EXTENSION
 
 ########################################
 
+def get_outboxes(pipeline_outbox, mb_outbox_path):
+    outboxes = {}
+
+    for storage_id in pipeline_outbox:
+        outboxes[storage_id] = Path(mb_outbox_path, storage_id)
+
+    return outboxes
+
+
+#def pipeline_outbox_deploy(api, storage_id, target_path):
+def pipeline_outbox_deploy(api, pipeline_outbox):
+    packages_to_upload = [] # all packages that need to be uploaded
+
+    mb_outbox_path = api.settings("outbox_root")
+    outboxes = get_outboxes(pipeline_outbox, mb_outbox_path)
+
+    # Calculate all packages that need to be uploaded
+    # TODO(matthew): need to make sure an upload of an empty directory
+    #   doesnt work
+    #  i.e. we add this storage id to upload, but we are not sure that any
+    #   file will actually be copied into it.
+    for outbox in outboxes:
+        storage_id = outbox
+        target_path = outboxes[outbox]
+        packages_to_upload.append(
+            libmailcd.workflow.PackageUpload(storage_id, target_path)
+        )
+
+    for ptu in packages_to_upload:
+        print(f"Upload {ptu.storage_id}")
+        if os.path.exists(ptu.package_path):
+            package_hash = api.store_add(ptu.storage_id, ptu.package_path)
+            print(f" as: {package_hash}")
+        else:
+            print(f" nothing to store for: {ptu.storage_id} (empty)")
+
+    return packages_to_upload
+
 def pipeline_outbox_run(api, pipeline_outbox):
     if not pipeline_outbox:
         raise ValueError("No outbox set")
@@ -19,15 +57,16 @@ def pipeline_outbox_run(api, pipeline_outbox):
     mb_outbox_path = api.settings("outbox_root")
     root_path = api.settings("workspace")
 
-    packages_to_upload = [] # all packages that need to be uploaded
     files_to_copy = [] # all the file copy rules
 
-    for storage_id in pipeline_outbox:
+    outboxes = get_outboxes(pipeline_outbox, mb_outbox_path)
+
+    for storage_id in outboxes:
         logging.debug(f"{storage_id}")
         rules = pipeline_outbox[storage_id]
         logging.debug(f"rules={rules}")
 
-        target_path = Path(mb_outbox_path, storage_id)
+        target_path = outboxes[storage_id]
 
         for rule in rules:
             source, destination = rule.split("->")
@@ -65,29 +104,12 @@ def pipeline_outbox_run(api, pipeline_outbox):
                     libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path)
                 )
 
-        # If successfully parsed all the rules for this package, mark it to be uploaded
-        # TODO(matthew): need to make sure an upload of an empty directory
-        #   doesnt work
-        #  i.e. we add this storage id to upload, but we are not sure that any
-        #   file will actually be copied into it.
-        packages_to_upload.append(
-            libmailcd.workflow.PackageUpload(storage_id, target_path)
-        )
-
     for ftc in files_to_copy:
         print(f"Copy {ftc.src_relative} => {ftc.dst_relative}")
         os.makedirs(ftc.dst_root, exist_ok=True)
         shutil.copy(ftc.src, ftc.dst)
 
     print(f"========== ======= ==========")
-
-    for ptu in packages_to_upload:
-        print(f"Upload {ptu.storage_id}")
-        if os.path.exists(ptu.package_path):
-            package_hash = api.store_add(ptu.storage_id, ptu.package_path)
-            print(f" as: {package_hash}")
-        else:
-            print(f" nothing to store for: {ptu.storage_id} (empty)")
 
 def pipeline_inbox_run(api, pipeline_inbox):
     if not pipeline_inbox:
