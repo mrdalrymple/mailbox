@@ -5,6 +5,7 @@ import shutil
 
 import libmailcd.storage
 import libmailcd.errors
+from libmailcd.constants import PIPELINE_COPY_SEPARATOR
 
 from libmailcd.cli.tools import agent
 from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
@@ -21,7 +22,6 @@ def get_outboxes(pipeline_outbox, mb_outbox_path):
     return outboxes
 
 
-#def pipeline_outbox_deploy(api, storage_id, target_path):
 def pipeline_outbox_deploy(api, pipeline_outbox):
     packages_to_upload = [] # all packages that need to be uploaded
 
@@ -55,9 +55,10 @@ def pipeline_outbox_run(api, pipeline_outbox):
         raise ValueError("No outbox set")
 
     mb_outbox_path = api.settings("outbox_root")
+    mb_local_root = api.settings("local_root_relative")
     root_path = api.settings("workspace")
 
-    files_to_copy = [] # all the file copy rules
+    files_to_copy = {} # all the file copy rules
 
     outboxes = get_outboxes(pipeline_outbox, mb_outbox_path)
 
@@ -67,11 +68,13 @@ def pipeline_outbox_run(api, pipeline_outbox):
         logging.debug(f"rules={rules}")
 
         target_path = outboxes[storage_id]
+        files_to_copy[storage_id] = []
 
         for rule in rules:
-            source, destination = rule.split("->")
+            source, destination = rule.split(PIPELINE_COPY_SEPARATOR)
             source = source.strip()
             destination = destination.strip()
+
             # Support destinations starting with "/" (in Windows)
             #  and not have it think it's the root of the drive
             #  but instead the root of the output path
@@ -90,7 +93,14 @@ def pipeline_outbox_run(api, pipeline_outbox):
             #   "WORKSPACE: *.txt -> /docs/"
             #   "LUA: *.dll -> /external/lua/"
             found_files = root_path.glob("**/" + source)
+            mb_local_root_str = str(mb_local_root)
+
             for ffile in found_files:
+                # Ignore files that are in the local mailbox root (that's our stuff)
+                if str(ffile).startswith(mb_local_root_str):
+                    logging.debug(f"Ignoring -- {mb_local_root_str}")
+                    continue
+
                 ffile_source_path = ffile
 
                 # get filename
@@ -100,16 +110,20 @@ def pipeline_outbox_run(api, pipeline_outbox):
                 ffile_destination_path = Path.joinpath(target_path, destination, ffilename)
 
                 # copy file (or save it to a list to be copied later)
-                files_to_copy.append(
+                files_to_copy[storage_id].append(
                     libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path)
                 )
 
-    for ftc in files_to_copy:
-        print(f"Copy {ftc.src_relative} => {ftc.dst_relative}")
-        os.makedirs(ftc.dst_root, exist_ok=True)
-        shutil.copy(ftc.src, ftc.dst)
-
-    print(f"========== ======= ==========")
+    if files_to_copy:
+        for sid in files_to_copy:
+            print(f"{sid}:")
+            if files_to_copy[sid]:
+                for ftc in files_to_copy[sid]:
+                    print(f"- Copy {ftc.src_relative} => {ftc.dst_relative}")
+                    os.makedirs(ftc.dst_root, exist_ok=True)
+                    shutil.copy(ftc.src, ftc.dst)
+        else:
+            print("- No matching files to copy")
 
 def pipeline_inbox_run(api, pipeline_inbox):
     if not pipeline_inbox:
