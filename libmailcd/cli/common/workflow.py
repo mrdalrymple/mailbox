@@ -204,6 +204,13 @@ def pipeline_set_env(mb_inbox_env_vars, mb_env_path):
 
     return env_vars
 
+def _expand_variables_from_env(string_to_expand, env): #for stage
+
+    for e in env:
+        print("e={e}")
+
+    return string_to_expand
+
 def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, env):
     print(f"> Starting Stage: {stage_name}")
 
@@ -225,9 +232,10 @@ def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, e
                     if env_output:
                         envfp.write(env_output + "\n")
                     pass
-                print(f"{env_result.stdout}")
+                #print(f"{env_result.stdout}")
+
                 for step in stage_steps:
-                    step = step.strip()
+                    step = _expand_variables_from_env(step.strip(), env).strip()
                     print(f"{stage_name}> {step}")
                     result = node.run_step(step)
 

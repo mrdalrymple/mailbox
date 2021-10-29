@@ -150,3 +150,8 @@ def save_yaml(yaml_file, data, indent=None):
             yaml.dump(data, stream, default_flow_style=False, indent=indent)
         else:
             yaml.dump(data, stream, default_flow_style=False)
+
+########################################
+
+def expand_variables(string_to_expand, variables = {}):
+    return string_to_expand.format(**variables)
