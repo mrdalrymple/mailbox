@@ -225,7 +225,13 @@ def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, e
         if 'steps' in stage:
             stage_steps = stage['steps']
 
+        if 'outbox' in stage:
+            stage_outbox = stage['outbox']
+
+
+        if stage_steps:
             with node:
+                # Setup
                 env_result = node.get_env()
                 with open(envlogpath, 'w') as envfp:
                     env_output = env_result.stdout.strip().replace("\r\n", "\n")
@@ -234,6 +240,7 @@ def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, e
                     pass
                 #print(f"{env_result.stdout}")
 
+                # Process
                 for step in stage_steps:
                     step = _expand_variables_from_env(step.strip(), env).strip()
                     print(f"{stage_name}> {step}")
@@ -244,6 +251,15 @@ def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, e
                         logfp.write(result_output + "\n")
                         print(result_output)
                     print(f"?={result.returncode}")
+
+                # Output
+                for outbox_name in stage_outbox:
+                    pass
+
+
+
+def pipeline_stage_outbox_run(api, stage_outbox):
+    pass
 
 def pipeline_stages_run(workspace, pipeline_stages, logpath, env):
     # TODO(Matthew): Should do a schema validation here (or up a level) first,
