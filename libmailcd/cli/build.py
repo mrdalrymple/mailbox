@@ -83,6 +83,7 @@ def main_build(api):
         if pipeline.stages:
             print(f"========== STAGES ==========")
             pipeline_stages_run(
+                api,
                 workspace.resolve(),
                 pipeline.stages,
                 logpath=mb_logs_build_path,
