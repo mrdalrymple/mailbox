@@ -6,6 +6,7 @@ LOCAL_MB_LOGS_BUILD_DIRNAME = "build"
 LOCAL_ENV_DIRNAME = "env"
 LOCAL_ENV_SELECT_FILENAME = ".selected"
 LOCAL_LIB_SELECT_FILENAME = ".selected"
+LOCAL_MB_STAGE_ROOT = "stages"
 
 DEFAULT_ENV_CONFIG_NAME = "default" # Maybe this should be "develop"?
 

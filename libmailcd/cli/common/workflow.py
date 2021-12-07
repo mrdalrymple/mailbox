@@ -6,6 +6,7 @@ import shutil
 import libmailcd.storage
 import libmailcd.errors
 from libmailcd.constants import PIPELINE_COPY_SEPARATOR
+from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 
 from libmailcd.cli.tools import agent
 from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
@@ -50,6 +51,7 @@ def pipeline_outbox_deploy(api, pipeline_outbox):
 
     return packages_to_upload
 
+# TODO(Matthew): this should be reused between stage and pipeline outboxes
 def pipeline_outbox_run(api, pipeline_outbox):
     if not pipeline_outbox:
         raise ValueError("No outbox set")
@@ -211,57 +213,71 @@ def _expand_variables_from_env(string_to_expand, env): #for stage
 
     return string_to_expand
 
-def _pipeline_process_stage(workspace, stage, stage_name, logpath, envlogpath, env):
+def _pipeline_process_stage(api, workspace, stage, stage_name, logpath, envlogpath, env):
     print(f"> Starting Stage: {stage_name}")
 
     if 'node' not in stage:
         raise ValueError(f"No 'node' block in stage: {stage_name}")
 
-    node = agent.factory(stage['node'], workspace, env)
+    #node = agent.factory(stage['node'], workspace, env)
 
     logpath = logpath.resolve()
     envlogpath = envlogpath.resolve()
+    stage_steps = None
+    stage_outboxes = None
     with open(logpath, 'w') as logfp:
         if 'steps' in stage:
             stage_steps = stage['steps']
 
         if 'outbox' in stage:
-            stage_outbox = stage['outbox']
+            stage_outboxes = stage['outbox']
 
+        # Allocate a node if we have steps to run and/or outbox to make
+        if stage_steps or stage_outboxes:
 
-        if stage_steps:
-            with node:
-                # Setup
-                env_result = node.get_env()
-                with open(envlogpath, 'w') as envfp:
-                    env_output = env_result.stdout.strip().replace("\r\n", "\n")
-                    if env_output:
-                        envfp.write(env_output + "\n")
-                    pass
-                #print(f"{env_result.stdout}")
+            #with node:
 
-                # Process
-                for step in stage_steps:
-                    step = _expand_variables_from_env(step.strip(), env).strip()
-                    print(f"{stage_name}> {step}")
-                    result = node.run_step(step)
+                if stage_steps:
+                    env_result = node.get_env()
+                    with open(envlogpath, 'w') as envfp:
+                        env_output = env_result.stdout.strip().replace("\r\n", "\n")
+                        if env_output:
+                            envfp.write(env_output + "\n")
+                        pass
+                    #print(f"{env_result.stdout}")
 
-                    result_output = result.stdout.strip().replace("\r\n", "\n")
-                    if result_output:
-                        logfp.write(result_output + "\n")
-                        print(result_output)
-                    print(f"?={result.returncode}")
+                    # Process
+                    for step in stage_steps:
+                        step = _expand_variables_from_env(step.strip(), env).strip()
+                        print(f"{stage_name}> {step}")
+                        result = node.run_step(step)
 
-                # Output
-                for outbox_name in stage_outbox:
-                    pass
+                        result_output = result.stdout.strip().replace("\r\n", "\n")
+                        if result_output:
+                            logfp.write(result_output + "\n")
+                            print(result_output)
+                        print(f"?={result.returncode}")
 
+                if stage_outboxes:
+                    for outbox_name in stage_outboxes:
+                        stage_outbox = stage_outboxes[outbox_name]
+                        _stage_outbox_run(api, stage_name, outbox_name, stage_outbox)
+                        pass
 
+# TODO(matthew): this function should go into the API / some get path api
+def _get_stage_outbox_location(api, stage, name):
+    mb_stage_relpath = api.settings("stage_root_relative")
 
-def pipeline_stage_outbox_run(api, stage_outbox):
-    pass
+    return Path(mb_stage_relpath, stage, LOCAL_OUTBOX_DIRNAME, name)
 
-def pipeline_stages_run(workspace, pipeline_stages, logpath, env):
+def _stage_outbox_run(api, stage, name, outbox):
+    outbox_path = _get_stage_outbox_location(api, stage, name) # mb_outbox_path
+    
+    
+
+    print(f"outbox location: {outbox_path}")
+
+def pipeline_stages_run(api, workspace, pipeline_stages, logpath, env):
     # TODO(Matthew): Should do a schema validation here (or up a level) first,
     #  so we can give line numbers for issues to the end user.
 
@@ -270,6 +286,7 @@ def pipeline_stages_run(workspace, pipeline_stages, logpath, env):
         logfilepath = Path(logpath, f"{stage_name}{LOG_FILE_EXTENSION}")
         envlogfilepath = Path(logpath, f"{stage_name}{ENV_LOG_FILE_EXTENSION}")
         _pipeline_process_stage(
+            api,
             workspace,
             stage,
             stage_name,

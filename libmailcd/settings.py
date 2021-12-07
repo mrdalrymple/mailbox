@@ -7,6 +7,7 @@ from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 from libmailcd.constants import LOCAL_INBOX_DIRNAME
 from libmailcd.constants import LOCAL_MB_LOGS_ROOT
 from libmailcd.constants import LOCAL_MB_LOGS_BUILD_DIRNAME
+from libmailcd.constants import LOCAL_MB_STAGE_ROOT
 
 
 MAILCD_CONFIG_ROOT = str(Path(Path.home(), ".mailcd"))
@@ -37,3 +38,9 @@ class Settings():
 
         self.logs_build_root_relative = Path(self.logs_root_relative, LOCAL_MB_LOGS_BUILD_DIRNAME)
         self.logs_build_root = Path(self.logs_root, LOCAL_MB_LOGS_BUILD_DIRNAME)
+
+        self.stage_root_relative = Path(LOCAL_MB_STAGE_ROOT)
+        self.stage_root = Path(self.local_root, LOCAL_MB_STAGE_ROOT)
+
+        self.stage_outbox_root_relative = Path(self.stage_root_relative, LOCAL_OUTBOX_DIRNAME)
+        self.stage_outbox_root = Path(self.stage_root, LOCAL_OUTBOX_DIRNAME)
