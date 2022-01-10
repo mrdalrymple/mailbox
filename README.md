@@ -89,7 +89,7 @@ stages:
       - echo fake program > myprogram.exe
 ```
 
-> **Note**: `steps` is a keyword, everthing in the list under it will be executed in order.
+> **Note**: `steps` is a keyword, everything in the list under it will be executed in order.
 
 ## Running The Pipeline
 
@@ -119,8 +119,9 @@ Right now we just have an "executable", but we will have more things eventually.
 
 ```yaml
 stages:
-// ...
-outbox:
+  mycompile:
+    // ...
+    outbox:
 ```
 
 > **Note**: This is where we will define packages we want to make.
