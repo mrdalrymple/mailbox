@@ -1,8 +1,149 @@
 Mail CD (Python)
 ================
 
-This is a build orchestration tool.
+A build orchestration tool built for developers with enterprise adoption in-mind.
+To minimize CI/CD vendor lock-in, but still maintianing the in-source pipeline file, we need to keep the in-source pipeline file as thin and abstract as possible.  The primary focus is building the project, leaving business logic to another layer.
 
+Let's get started on building your first pipeline, we can discuss more on the principles later...
+Just remember, the pipeline should focus as much as it can on what needs to happen, not how.
+
+# Install
+
+## Pre-requirements
+
+1. Windows 10+
+2. Docker Desktop
+
+This tool currently depends on 'Docker Desktop' to be installed.
+It is used to build and run both Windows and Linux containers.
+
+> **Note**: Linux support coming soon, but will only be able to use Linux containers.
+
+## Virtual Environment
+
+### From Source
+
+Install the application from source into a Python virtual environment:
+
+```sh
+python -m venv .venv
+.venv/Scripts/activate
+cd pymailcd
+python -m pip install .
+```
+
+### From pypi
+
+*Not available yet.*
+
+
+# Tutorial
+
+We're going to create a project that builds in a container; that container's image will be made from a Dockerfile.
+Sound's standard right?  Let's see what it looks like...
+
+## Creating The Pipeline File
+
+1. Create a Dockerfile for the project
+
+### ./Dockerfile
+```Dockerfile
+FROM ubuntu:latest
+```
+
+2. Create a file in the root of your project named: pipeline.yml
+
+3. Add your first stage to the pipeline (using yml syntax)
+
+### ./pipeline.yml
+```yaml
+stages:
+  mycompile:
+```
+>**Note**: `stages` is a keyword, `mycompile` is a user-defined name of the stage.
+
+This stage we're writing needs a place to execute from...
+
+4. Set the `node` of the stage to be from our Dockerfile
+
+### ./pipeline.yml
+```yaml
+stages:
+  mycompile:
+    node:
+      containerfile: "Dockerfile"
+```
+
+> **Note**: `node` and `containerfile` are both keywords, while "Dockerfile" is the relative filepath to the Dockerfile for our project.
+
+Our project needs to run some build commands, let's fake it for now...
+
+5. Add a step to *"build"* our *"project"*
+
+```yaml
+stages:
+  mycompile:
+    node:
+      containerfile: "Dockerfile"
+    steps:
+      - echo fake program > myprogram.exe
+```
+
+> **Note**: `steps` is a keyword, everthing in the list under it will be executed in order.
+
+## Running The Pipeline
+
+From the root of your project, open a command prompt that has mailbox installed and run the build command:
+
+```
+mb build .
+```
+
+What just happened?  Well, this is roughly what happened:
+
+* We noticed that the Dockerfile hasn't been built yet, so we built that.
+  * As long as the Dockerfile isn't changed, we won't rebuild it again
+* We started up the image that corresponds to the Dockerfile
+* We attached to the running container
+* We went through the list of steps and ran then one-by-one.
+
+> **Pro-Tip**: Closed your terminal but want to look at the build logs? Try running `mb logs` in your project root.
+
+So we now have our super useful program built, now we want to package it up so we can easily share it!
+
+## Package The Product
+
+Right now we just have an "executable", but we will have more things eventually.  Let's start now with creating the package of our project:
+
+1. Add an `outbox` section to our stage
+
+```yaml
+stages:
+// ...
+outbox:
+```
+
+> **Note**: This is where we will define packages we want to make.
+
+2. Add a package for our project that contains our executable at the root of the package
+
+```yaml
+stages:
+  mycompile:
+    node:
+      containerfile: "Dockerfile"
+    steps:
+      - echo fake program > myprogram.exe
+    outbox:
+      myproject:
+        - "*.exe -> /"
+```
+
+## Saving The Pipeline
+
+Now that we have something working, here is a good point to save our current state.
+Check-in both the 'pipeline.yaml' and 'Dockerfile' files into your source control.
+Going forward, any new feature to your project that requires an update to how it's built, or the container it's built in should be checked-in commit that enables that new feature.
 
 # Principles
 
