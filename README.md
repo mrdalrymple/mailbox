@@ -17,7 +17,7 @@ Just remember, the pipeline should focus as much as it can on what needs to happ
 This tool currently depends on 'Docker Desktop' to be installed.
 It is used to build and run both Windows and Linux containers.
 
-> **Note**: Linux support coming soon, but will only be able to use Linux containers.
+> **Note:** Linux support coming soon, but will only be able to use Linux containers.
 
 ## Virtual Environment
 
@@ -26,10 +26,10 @@ It is used to build and run both Windows and Linux containers.
 Install the application from source into a Python virtual environment:
 
 ```sh
+git clone https://github.com/mrdalrymple/mailbox.git
 python -m venv .venv
 .venv/Scripts/activate
-cd pymailcd
-python -m pip install .
+python -m pip install ./mailbox
 ```
 
 ### From pypi
@@ -40,13 +40,20 @@ python -m pip install .
 # Tutorial
 
 We're going to create a project that builds in a container; that container's image will be made from a Dockerfile.
-Sound's standard right?  Let's see what it looks like...
+Sounds standard right?  Let's see what it looks like...
 
 ## Creating The Pipeline File
 
-1. Create a Dockerfile for the project
+1. Create a project directory
 
-### ./Dockerfile
+```sh
+mkdir myproject
+cd myproject
+```
+
+2. Create a Dockerfile for the project
+
+**File:** ./Dockerfile
 ```Dockerfile
 FROM ubuntu:latest
 ```
@@ -55,7 +62,7 @@ FROM ubuntu:latest
 
 3. Add your first stage to the pipeline (using yml syntax)
 
-### ./pipeline.yml
+**File:** ./pipeline.yml
 ```yaml
 stages:
   mycompile:
@@ -66,7 +73,7 @@ This stage we're writing needs a place to execute from...
 
 4. Set the `node` of the stage to be from our Dockerfile
 
-### ./pipeline.yml
+**File:** ./pipeline.yml
 ```yaml
 stages:
   mycompile:
@@ -80,6 +87,7 @@ Our project needs to run some build commands, let's fake it for now...
 
 5. Add a step to *"build"* our *"project"*
 
+**File:** ./pipeline.yml
 ```yaml
 stages:
   mycompile:
@@ -89,14 +97,14 @@ stages:
       - echo fake program > myprogram.exe
 ```
 
-> **Note**: `steps` is a keyword, everthing in the list under it will be executed in order.
+> **Note:** `steps` is a keyword, everthing in the list under it will be executed in order.
 
 ## Running The Pipeline
 
 From the root of your project, open a command prompt that has mailbox installed and run the build command:
 
 ```
-mb build .
+mb build
 ```
 
 What just happened?  Well, this is roughly what happened:
@@ -107,7 +115,8 @@ What just happened?  Well, this is roughly what happened:
 * We attached to the running container
 * We went through the list of steps and ran then one-by-one.
 
-> **Pro-Tip**: Closed your terminal but want to look at the build logs? Try running `mb logs` in your project root.
+> **Pro-Tip:** Closed your terminal but want to look at the build logs? Try running `mb logs` in your project root.
+> For this example, try: `mb logs build/mycompile`
 
 So we now have our super useful program built, now we want to package it up so we can easily share it!
 
@@ -117,16 +126,18 @@ Right now we just have an "executable", but we will have more things eventually.
 
 1. Add an `outbox` section to our stage
 
+**File:** ./pipeline.yml
 ```yaml
 stages:
 // ...
 outbox:
 ```
 
-> **Note**: This is where we will define packages we want to make.
+> **Note:** This is where we will define packages we want to make.
 
 2. Add a package for our project that contains our executable at the root of the package
 
+**File:** ./pipeline.yml
 ```yaml
 stages:
   mycompile:
@@ -134,9 +145,9 @@ stages:
       containerfile: "Dockerfile"
     steps:
       - echo fake program > myprogram.exe
-    outbox:
-      myproject:
-        - "*.exe -> /"
+outbox:
+  myproject:
+    - "*.exe -> /"
 ```
 
 ## Saving The Pipeline
