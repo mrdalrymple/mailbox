@@ -109,7 +109,7 @@ mb build
 ```
 
 Output:
-```sh
+```
 (.venv) myproject>mb build
 ========== STAGES ==========
 > Starting Stage: mycompile
