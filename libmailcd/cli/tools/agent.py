@@ -142,11 +142,13 @@ def factory(node_dict, workspace, env):
             if containerfile_os == PIPELINE_CONTAINERFILE_OS_WINDOWS:
                 raise ValueError(f"Windows containers are not supported for this OS ({os.name}).")
 
+        # TODO(Matthew): Make the print statements here logging (info) instead?
         found_images = docker.images_get()
         if container_hash not in found_images:
-            print(f"Container not found, building '{containerfile_os}{PIPELINE_CONTAINERFILE_SEPARATOR}{containerfile}' ({container_hash})")
+            print(f"> Container image not found, building: '{container_hash}' ({containerfile_os}{PIPELINE_CONTAINERFILE_SEPARATOR}{containerfile})")
             docker.build(containerfile, container_hash, os=containerfile_os)
-            pass
+        else:
+            print(f"> Container image found, using: '{container_hash}' ({containerfile_os}{PIPELINE_CONTAINERFILE_SEPARATOR}{containerfile})")
 
         if containerfile_os == "windows":
             node = LocalDockerWindowsNode(container_hash, host_workspace, env)
