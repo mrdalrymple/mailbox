@@ -46,65 +46,77 @@ Sounds standard right?  Let's see what it looks like...
 
 1. Create a project directory
 
-```sh
-mkdir myproject
-cd myproject
-```
+    ```sh
+    mkdir myproject
+    cd myproject
+    ```
 
 2. Create a Dockerfile for the project
 
-**File:** ./Dockerfile
-```Dockerfile
-FROM ubuntu:latest
-```
+    **File:** ./Dockerfile
+    ```Dockerfile
+    FROM ubuntu:latest
+    ```
 
-2. Create a file in the root of your project named: pipeline.yml
+3. Create a file in the root of your project named: pipeline.yml
 
-3. Add your first stage to the pipeline (using yml syntax)
+4. Add your first stage to the pipeline (using yml syntax)
 
-**File:** ./pipeline.yml
-```yaml
-stages:
-  mycompile:
-```
->**Note**: `stages` is a keyword, `mycompile` is a user-defined name of the stage.
+    **File:** ./pipeline.yml
+    ```yaml
+    stages:
+      mycompile:
+    ```
+    >**Note**: `stages` is a keyword, `mycompile` is a user-defined name of the stage.
 
 This stage we're writing needs a place to execute from...
 
-4. Set the `node` of the stage to be from our Dockerfile
+5. Set the `node` of the stage to be from our Dockerfile
 
-**File:** ./pipeline.yml
-```yaml
-stages:
-  mycompile:
-    node:
-      containerfile: "Dockerfile"
-```
+    **File:** ./pipeline.yml
+    ```yaml
+    stages:
+      mycompile:
+        node:
+          containerfile: "Dockerfile"
+    ```
 
-> **Note**: `node` and `containerfile` are both keywords, while "Dockerfile" is the relative filepath to the Dockerfile for our project.
+    > **Note**: `node` and `containerfile` are both keywords, while "Dockerfile" is the relative filepath to the Dockerfile for our project.
 
 Our project needs to run some build commands, let's fake it for now...
 
-5. Add a step to *"build"* our *"project"*
+6. Add a step to *"build"* our *"project"*
 
-**File:** ./pipeline.yml
-```yaml
-stages:
-  mycompile:
-    node:
-      containerfile: "Dockerfile"
-    steps:
-      - echo fake program > myprogram.exe
-```
+    **File:** ./pipeline.yml
+    ```yaml
+    stages:
+      mycompile:
+        node:
+          containerfile: "Dockerfile"
+        steps:
+          - echo fake program > myprogram.exe
+    ```
 
-> **Note:** `steps` is a keyword, everthing in the list under it will be executed in order.
+    > **Note:** `steps` is a keyword, everthing in the list under it will be executed in order.
 
 ## Running The Pipeline
 
-From the root of your project, open a command prompt that has mailbox installed and run the build command:
+Open a terminal that has mailbox installed and run this build command from the root of your project:
 
-```
+
+```sh
 mb build
+```
+
+Output:
+```sh
+(.venv) myproject>mb build
+========== STAGES ==========
+> Starting Stage: mycompile
+Container not found, building 'linux:Dockerfile' (00731df6dccbd8bd8a617fc2a8424e9bee47025a)
+mycompile> echo fake program > myprogram.exe
+?=0
+=============================
 ```
 
 What just happened?  Well, this is roughly what happened:
@@ -126,29 +138,29 @@ Right now we just have an "executable", but we will have more things eventually.
 
 1. Add an `outbox` section to our stage
 
-**File:** ./pipeline.yml
-```yaml
-stages:
-// ...
-outbox:
-```
+    **File:** ./pipeline.yml
+    ```yaml
+    stages:
+    // ...
+    outbox:
+    ```
 
-> **Note:** This is where we will define packages we want to make.
+    > **Note:** This is where we will define packages we want to make.
 
 2. Add a package for our project that contains our executable at the root of the package
 
-**File:** ./pipeline.yml
-```yaml
-stages:
-  mycompile:
-    node:
-      containerfile: "Dockerfile"
-    steps:
-      - echo fake program > myprogram.exe
-outbox:
-  myproject:
-    - "*.exe -> /"
-```
+    **File:** ./pipeline.yml
+    ```yaml
+    stages:
+      mycompile:
+        node:
+          containerfile: "Dockerfile"
+        steps:
+          - echo fake program > myprogram.exe
+    outbox:
+      myproject:
+        - "*.exe -> /"
+    ```
 
 ## Saving The Pipeline
 
