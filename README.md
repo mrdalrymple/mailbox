@@ -9,7 +9,7 @@ Just remember, the pipeline should focus as much as it can on what needs to happ
 
 # Install
 
-## Pre-requirements
+## Prerequisites
 
 1. Windows 10+
 2. Docker Desktop
@@ -36,17 +36,18 @@ python -m pip install .
 
 *Not available yet.*
 
+# In-source Pipeline File Format
 
-# Tutorial
+## Tutorial
 
 We're going to create a project that builds in a container; that container's image will be made from a Dockerfile.
 Sound's standard right?  Let's see what it looks like...
 
-## Creating The Pipeline File
+### Creating The Pipeline File
 
 1. Create a Dockerfile for the project
 
-### ./Dockerfile
+#### ./Dockerfile
 ```Dockerfile
 FROM ubuntu:latest
 ```
@@ -55,7 +56,7 @@ FROM ubuntu:latest
 
 3. Add your first stage to the pipeline (using yml syntax)
 
-### ./pipeline.yml
+#### ./pipeline.yml
 ```yaml
 stages:
   mycompile:
@@ -66,7 +67,7 @@ This stage we're writing needs a place to execute from...
 
 4. Set the `node` of the stage to be from our Dockerfile
 
-### ./pipeline.yml
+#### ./pipeline.yml
 ```yaml
 stages:
   mycompile:
@@ -91,7 +92,7 @@ stages:
 
 > **Note**: `steps` is a keyword, everything in the list under it will be executed in order.
 
-## Running The Pipeline
+### Running The Pipeline
 
 From the root of your project, open a command prompt that has mailbox installed and run the build command:
 
@@ -111,7 +112,7 @@ What just happened?  Well, this is roughly what happened:
 
 So we now have our super useful program built, now we want to package it up so we can easily share it!
 
-## Package The Product
+### Package The Product
 
 Right now we just have an "executable", but we will have more things eventually.  Let's start now with creating the package of our project:
 
@@ -140,11 +141,18 @@ stages:
         - "*.exe -> /"
 ```
 
-## Saving The Pipeline
+### Saving The Pipeline
 
 Now that we have something working, here is a good point to save our current state.
 Check-in both the 'pipeline.yaml' and 'Dockerfile' files into your source control.
 Going forward, any new feature to your project that requires an update to how it's built, or the container it's built in should be checked-in commit that enables that new feature.
+
+
+# Extension Library
+
+The extension library is a way for third-parties to override or extend the out-of-box behavior.
+A common example would be for enterprise users to use a central package store instead of a directory on the local machine.
+
 
 # Principles
 
