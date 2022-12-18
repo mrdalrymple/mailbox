@@ -2,9 +2,10 @@ import os
 from pathlib import Path
 
 class FileCopy():
-    def __init__(self, src, dst):
+    def __init__(self, src, dst, rule):
         self.src = src
         self.dst = dst
+        self.rule = rule
 
         # TODO(matthew): handle the case where src and dst may have wildly different common paths.
         #  Maybe that isn't supported?  If it is, we'll need to pass in the src root path and the

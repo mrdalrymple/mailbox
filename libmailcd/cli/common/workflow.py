@@ -241,9 +241,11 @@ def _exec_outbox_rules(mb_local_root, root_path, outbox, outboxes):
 
         target_path = outboxes[storage_id]
 
-        files_to_copy[storage_id] = []
+        files_to_copy[storage_id] = {}
 
         for rule in rules:
+            files_to_copy[storage_id][rule] = []
+
             source, destination = rule.split(PIPELINE_COPY_SEPARATOR)
             source = source.strip()
             destination = destination.strip()
@@ -283,8 +285,8 @@ def _exec_outbox_rules(mb_local_root, root_path, outbox, outboxes):
                 ffile_destination_path = Path.joinpath(target_path, destination, ffilename)
 
                 # copy file (or save it to a list to be copied later)
-                files_to_copy[storage_id].append(
-                    libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path)
+                files_to_copy[storage_id][rule].append(
+                    libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path, rule=rule)
                 )
 
     if files_to_copy:
@@ -292,14 +294,21 @@ def _exec_outbox_rules(mb_local_root, root_path, outbox, outboxes):
         for sid in files_to_copy:
             print(f"{sid}:")
             if files_to_copy[sid]:
-                for ftc in files_to_copy[sid]:
-                    # TODO(Matthew): Make this ftc.dst_relative output be a debug output, instead
-                    #  print how to access it via the generated root variable (example: MB_LIB_ROOT/lib/mylib.lib).
-                    print(f"- Copy {ftc.src_relative} => {ftc.dst_relative}")
-                    os.makedirs(ftc.dst_root, exist_ok=True)
-                    shutil.copy(ftc.src, ftc.dst)
+                for rule in rules:
+                    print(f"- {rule}")
+                    files = files_to_copy[sid][rule]
+                    if files:
+                        for ftc in files:
+                            # TODO(Matthew): Make this ftc.dst_relative output be a debug output, instead
+                            #  print how to access it via the generated root variable (example: MB_LIB_ROOT/lib/mylib.lib).
+                            print(f"-- Copy {ftc.src_relative} => {ftc.dst_relative}")
+                            os.makedirs(ftc.dst_root, exist_ok=True)
+                            shutil.copy(ftc.src, ftc.dst)
+                    else:
+                        print("-- No matching files to copy")
+                        pass
             else:
-                print("- No matching files to copy")
+                print("- No rules found")
 
 class StageTreeNode:
     def __init__(self, name):
