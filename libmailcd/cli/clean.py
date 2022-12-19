@@ -16,13 +16,14 @@ from libmailcd.cli.main import main
 @main.command("clean")
 @click.option("--env", is_flag=True)
 @click.pass_obj
-def main_clean(api, env):
+def main_clean(obj, env):
     """Cleans the mb files in the workspace.
     
     Arguments:
         workspace {Path} -- Path to the workspace to clean.
         env {Bool} -- Clean the environment out as well.
     """
+    api = obj["api"]
     workspace = api.settings("workspace")
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 

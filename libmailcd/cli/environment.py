@@ -18,12 +18,14 @@ def main_env():
 @main_env.command("ls")
 @click.argument("config", required=False)
 @click.pass_obj
-def main_env_ls(api, config):
+def main_env_ls(obj, config):
     """List the environments and their variables.
 
     Arguments:
         config {String} -- Config to the list the variables associated.
     """
+
+    api = obj["api"]
 
     if config:
         try:
@@ -48,12 +50,13 @@ def main_env_ls(api, config):
 @main_env.command("create")
 @click.argument("config")
 @click.pass_obj
-def main_env_create(api, config):
+def main_env_create(obj, config):
     """Create an environment.
 
     Arguments:
         config {String} -- Name of the environment config to create.
     """
+    api = obj["api"]
     # TODO(matthew): add '--from' option so you can copy an environment
     # TODO(matthew): add a whole 'copy' command?
 
@@ -67,12 +70,14 @@ def main_env_create(api, config):
 @main_env.command("delete")
 @click.argument("config")
 @click.pass_obj
-def main_env_delete(api, config):
+def main_env_delete(obj, config):
     """Remove an environment.
 
     Arguments:
         config {String} -- Name of the environment config to remove.
     """
+
+    api = obj["api"]
 
     # TODO(matthew): use 'api.env_exists(config):' here?
     if api.env_is_environment(config):
@@ -94,12 +99,14 @@ def main_env_delete(api, config):
 @main_env.command("select")
 @click.argument("config")
 @click.pass_obj
-def main_env_select(api, config):
+def main_env_select(obj, config):
     """Select an environment.
 
     Arguments:
         config {String} -- Name of the environment to select.
     """
+
+    api = obj["api"]
 
     if not api.env_is_environment(config):
         print(f"Unknown environment: {config}")
@@ -113,13 +120,15 @@ def main_env_select(api, config):
 @click.argument("value")
 @click.pass_obj
 # TODO(matthew): add a --global flag? How would a global env work?
-def main_env_set(api, ref, value):
+def main_env_set(obj, ref, value):
     """Set the value for an environment variable.
 
     Arguments:
         ref {String} -- Environment ref in the form of [CONFIG/]VARIABLE
         value {String} -- Value to set the specified environment variable.
     """
+    api = obj["api"]
+
     # Note: What are all the scenarios we need to worry about here?
     # 1. config is specified, but doesn't exist => error message out
     # 2. config is not specified, none selected => use default
@@ -158,12 +167,14 @@ def main_env_set(api, ref, value):
 @main_env.command("unset")
 @click.argument("ref")
 @click.pass_obj
-def main_env_unset(api, ref):
+def main_env_unset(obj, ref):
     """Remove a variable from an environment.
 
     Arguments:
         ref {String} -- Environment ref in the form of [CONFIG/]VARIABLE
     """
+
+    api = obj["api"]
 
     if not api.env_valid_ref(ref):
         print(f"Invalid environment ref: {ref}")

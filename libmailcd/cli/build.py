@@ -22,8 +22,11 @@ from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
 
 @main.command("build")
 @click.pass_obj
-def main_build(api):
+def main_build(obj):
     exit_code = 0
+
+    api = obj["api"]
+    logger = obj["logger"]
 
     try:
         workspace = api.settings("workspace")
@@ -63,6 +66,7 @@ def main_build(api):
         #######################################
         #               INBOX                 #
         #######################################
+        logger = logging.getLogger()
 
         if pipeline.inbox:
             print(f"========== INBOX ==========")
