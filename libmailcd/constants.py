@@ -1,9 +1,9 @@
 LOCAL_MB_ROOT = ".mb"
-LOCAL_INBOX_DIRNAME = "inbox"
-LOCAL_OUTBOX_DIRNAME = "outbox"
-LOCAL_MB_LOGS_ROOT = "logs"
+LOCAL_INBOX_DIRNAME = "inbox" # TODO(Matthew): rename to have _MB_ in name
+LOCAL_OUTBOX_DIRNAME = "outbox" # TODO(Matthew): rename to have _MB_ in name
+LOCAL_MB_LOGS_ROOT_DIRNAME = "logs"
 LOCAL_MB_LOGS_BUILD_DIRNAME = "build"
-LOCAL_ENV_DIRNAME = "env"
+LOCAL_ENV_DIRNAME = "env" # TODO(Matthew): rename to have _MB_ in name
 LOCAL_ENV_SELECT_FILENAME = ".selected"
 LOCAL_LIB_SELECT_FILENAME = ".selected"
 LOCAL_MB_STAGE_ROOT = "stages"

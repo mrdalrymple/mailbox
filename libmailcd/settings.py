@@ -5,7 +5,7 @@ from libmailcd.constants import LOCAL_ENV_DIRNAME
 from libmailcd.constants import LOCAL_MB_ROOT
 from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 from libmailcd.constants import LOCAL_INBOX_DIRNAME
-from libmailcd.constants import LOCAL_MB_LOGS_ROOT
+from libmailcd.constants import LOCAL_MB_LOGS_ROOT_DIRNAME
 from libmailcd.constants import LOCAL_MB_LOGS_BUILD_DIRNAME
 from libmailcd.constants import LOCAL_MB_STAGE_ROOT
 
@@ -25,19 +25,19 @@ class Settings():
         self.local_root = Path(self.workspace, self.local_root_relative)
 
         self.environment_root_relative = Path(self.local_root_relative, LOCAL_ENV_DIRNAME)
-        self.environment_root = Path(self.local_root, LOCAL_ENV_DIRNAME)
+        #self.environment_root = Path(self.local_root, LOCAL_ENV_DIRNAME)
 
         self.inbox_root_relative = Path(self.local_root_relative, LOCAL_INBOX_DIRNAME)
-        self.inbox_root = Path(self.local_root, LOCAL_INBOX_DIRNAME)
+        #self.inbox_root = Path(self.local_root, LOCAL_INBOX_DIRNAME)
 
         self.outbox_root_relative = Path(self.local_root_relative, LOCAL_OUTBOX_DIRNAME)
-        self.outbox_root = Path(self.local_root, LOCAL_OUTBOX_DIRNAME)
+        #self.outbox_root = Path(self.local_root, LOCAL_OUTBOX_DIRNAME)
 
-        self.logs_root_relative = Path(self.local_root_relative, LOCAL_MB_LOGS_ROOT)
-        self.logs_root = Path(self.local_root, LOCAL_MB_LOGS_ROOT)
+        self.logs_root_relative = Path(self.local_root_relative, LOCAL_MB_LOGS_ROOT_DIRNAME)
+        #self.logs_root = Path(self.local_root, LOCAL_MB_LOGS_ROOT_DIRNAME)
 
         self.logs_build_root_relative = Path(self.logs_root_relative, LOCAL_MB_LOGS_BUILD_DIRNAME)
-        self.logs_build_root = Path(self.logs_root, LOCAL_MB_LOGS_BUILD_DIRNAME)
+        #self.logs_build_root = Path(self.logs_root, LOCAL_MB_LOGS_BUILD_DIRNAME)
 
         self.stage_root_relative = Path(self.local_root_relative, LOCAL_MB_STAGE_ROOT)
         self.stage_root = Path(self.local_root, LOCAL_MB_STAGE_ROOT)
