@@ -77,7 +77,8 @@ def get_environments(mb_env_path):
     environments = []
     if mb_env_path.exists():
         environments = os.listdir(mb_env_path)
-        environments.remove(LOCAL_ENV_SELECT_FILENAME)
+        if LOCAL_ENV_SELECT_FILENAME in environments:
+            environments.remove(LOCAL_ENV_SELECT_FILENAME)
     return environments
 
 def valid_env_ref(ref):

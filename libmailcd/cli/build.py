@@ -11,13 +11,13 @@ import libmailcd.utils
 import libmailcd.workflow
 import libmailcd.env
 import libmailcd.pipeline
+from libmailcd.cli.common.path_manager import *
 from libmailcd.cli.common.workflow import pipeline_inbox_run
 from libmailcd.cli.common.workflow import pipeline_outbox_run
 from libmailcd.cli.common.workflow import pipeline_stages_run
 from libmailcd.cli.common.workflow import pipeline_set_env
 from libmailcd.cli.main import main
 
-from libmailcd.cli.common.path_manager import *
 
 ########################################
 

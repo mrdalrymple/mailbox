@@ -6,6 +6,7 @@ from libmailcd.constants import LOCAL_OUTBOX_DIRNAME
 from libmailcd.constants import LOCAL_INBOX_DIRNAME
 from libmailcd.constants import LOCAL_MB_LOGS_BUILD_DIRNAME
 from libmailcd.constants import LOCAL_MB_LOGS_ROOT_DIRNAME
+from libmailcd.constants import LOCAL_MB_STAGE_ROOT
 
 from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
 
@@ -27,6 +28,14 @@ class Outbox:
         return self._root
 
 class Inbox:
+    def __init__(self, root):
+        self._root = root
+
+    @property
+    def root(self):
+        return self._root
+
+class Stages:
     def __init__(self, root):
         self._root = root
 
@@ -77,3 +86,7 @@ class Layout:
     @property
     def logs(self):
         return Logs(Path(self._root, LOCAL_MB_LOGS_ROOT_DIRNAME))
+
+    @property
+    def stages(self):
+        return Stages(Path(self._root, LOCAL_MB_STAGE_ROOT))
