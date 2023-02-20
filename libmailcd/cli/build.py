@@ -99,7 +99,7 @@ def main_build(obj):
                 api,
                 workspace.resolve(),
                 pipeline.stages,
-                logpath=mb_logs_build_path,
+                layout_logs=layout.logs,
                 env=env_vars
             )
             show_footer = True

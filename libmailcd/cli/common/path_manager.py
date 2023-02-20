@@ -9,6 +9,8 @@ from libmailcd.constants import LOCAL_MB_LOGS_ROOT_DIRNAME
 from libmailcd.constants import LOCAL_MB_STAGE_ROOT
 
 from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
+from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
+from libmailcd.cli.common.constants import ENV_LOG_FILE_EXTENSION
 
 
 class Env:
@@ -34,7 +36,7 @@ class Inbox:
     @property
     def root(self):
         return self._root
-    
+
     def get_package_path(self, storage_id, package_hash):
         '''
         Get the path to the root of where a package should be located
@@ -60,6 +62,12 @@ class Logs:
     @property
     def builds(self):
         return Path(self._root, LOCAL_MB_LOGS_BUILD_DIRNAME)
+
+    def get_build_log_path(self, stage_name):
+        return Path(self._root, f"{stage_name}{LOG_FILE_EXTENSION}")
+
+    def get_env_log_path(self, stage_name):
+        return Path(self._root, f"{stage_name}{ENV_LOG_FILE_EXTENSION}")
 
 
 class Layout:

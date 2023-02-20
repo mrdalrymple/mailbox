@@ -9,8 +9,7 @@ from libmailcd.constants import PIPELINE_COPY_SEPARATOR
 from libmailcd.constants import LOCAL_OUTBOX_DIRNAME # Note(matthew): The use of this variable should be refactored (should not include this here)
 
 from libmailcd.cli.tools import agent
-from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
-from libmailcd.cli.common.constants import ENV_LOG_FILE_EXTENSION
+
 
 ########################################
 
@@ -214,7 +213,7 @@ def _stage_outbox_run(api, stage, stage_outbox):
     stage_outbox_root = _get_stage_outbox_root(api, stage)
     mb_local_root = api.settings("local_root_relative")
     root_path = api.settings("workspace")
-    
+
     # Copy files into outbox
     logging.debug(f"outbox root={stage_outbox_root}")
 
@@ -396,7 +395,7 @@ def _get_stage_order_sequential(stages):
 
     return ordered_stages
 
-def pipeline_stages_run(api, workspace, pipeline_stages, logpath, env):
+def pipeline_stages_run(api, workspace, pipeline_stages, layout_logs, env):
     # TODO(Matthew): Should do a schema validation here (or up a level) first,
     #  so we can give line numbers for issues to the end user.
 
@@ -411,8 +410,9 @@ def pipeline_stages_run(api, workspace, pipeline_stages, logpath, env):
         stage_no = stage_no + 1
         #print(f"STAGE#{stage_no}: {stage_name}")
 
-        logfilepath = Path(logpath, f"{stage_name}{LOG_FILE_EXTENSION}")
-        envlogfilepath = Path(logpath, f"{stage_name}{ENV_LOG_FILE_EXTENSION}")
+        logfilepath = layout_logs.get_build_log_path(stage_name)
+
+        envlogfilepath = layout_logs.get_env_log_path(stage_name)
         _pipeline_process_stage(
             api,
             workspace,
