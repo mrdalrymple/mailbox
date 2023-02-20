@@ -12,7 +12,9 @@ from libmailcd.cli.main import main
 
 @main.command("pull")
 @click.pass_obj
-def main_pull(api):
+def main_pull(obj):
+    api = obj["api"]
+
     workspace = api.settings("workspace")
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 

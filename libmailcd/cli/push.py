@@ -13,7 +13,9 @@ from libmailcd.cli.main import main
 # TODO(Matthew): Add option to specify a single storage_id/outbox to push
 @main.command("push")
 @click.pass_obj
-def main_push(api):
+def main_push(obj):
+    api = obj["api"]
+
     workspace = api.settings("workspace")
     pipeline_filepath = Path(workspace, INSOURCE_PIPELINE_FILENAME).resolve()
 

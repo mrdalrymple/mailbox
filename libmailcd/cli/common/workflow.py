@@ -9,8 +9,7 @@ from libmailcd.constants import PIPELINE_COPY_SEPARATOR
 from libmailcd.constants import LOCAL_OUTBOX_DIRNAME # Note(matthew): The use of this variable should be refactored (should not include this here)
 
 from libmailcd.cli.tools import agent
-from libmailcd.cli.common.constants import LOG_FILE_EXTENSION
-from libmailcd.cli.common.constants import ENV_LOG_FILE_EXTENSION
+
 
 ########################################
 
@@ -52,25 +51,25 @@ def pipeline_outbox_deploy(api, pipeline_outbox):
     return packages_to_upload
 
 # TODO(Matthew): this should be reused between stage and pipeline outboxes
-def pipeline_outbox_run(api, pipeline_outbox):
+def pipeline_outbox_run(workspace, layout_outbox, pipeline_outbox):
     if not pipeline_outbox:
         raise ValueError("No outbox set")
 
-    mb_outbox_path = api.settings("outbox_root")
-    mb_local_root = api.settings("local_root_relative")
-    root_path = api.settings("workspace")
+    mb_outbox_path = layout_outbox.root
+    #mb_local_root = api.settings("local_root_relative")
+    mb_local_root = layout_outbox.root
 
     outboxes = get_outboxes(pipeline_outbox, mb_outbox_path)
 
     _exec_outbox_rules(
         mb_local_root=mb_local_root,
-        root_path=root_path,
+        workspace=workspace,
         outbox=pipeline_outbox,
         outboxes=outboxes
     )
 
 
-def pipeline_inbox_run(api, pipeline_inbox):
+def pipeline_inbox_run(inbox_layout, pipeline_inbox):
     if not pipeline_inbox:
         raise ValueError("No inbox set")
 
@@ -105,8 +104,6 @@ def pipeline_inbox_run(api, pipeline_inbox):
 
     # Download all required packages
     if packages_to_download:
-        mb_inbox_relpath = api.settings("inbox_root_relative")
-        mb_inbox_path = api.settings("inbox_root")
 
         # TODO(matthew): Do we need to optimize this to only actually download ones we don't already have
         for package in packages_to_download:
@@ -115,17 +112,16 @@ def pipeline_inbox_run(api, pipeline_inbox):
             print(f"Downloading package: {storage_id}/{package_hash}")
 
             # calculate target directory
-            target_relpath = Path(mb_inbox_relpath, storage_id, package_hash)
-            target_path = Path(mb_inbox_path, target_relpath)
+            target_path = inbox_layout.get_package_path(storage_id, package_hash)
 
             # download to the target directory
             libmailcd.storage.download(storage_id, package_hash, target_path)
-            print(f" --> '{target_relpath}'")
+            print(f" --> '{target_path}'")
 
     # Set env variables that point to the inbox packages
     for package in inbox_packages:
         env_var_name = f"MB_{storage_id}_ROOT"
-        env_var_value = str(target_relpath)
+        env_var_value = str(target_path)
         env_vars[env_var_name] = env_var_value
 
     return env_vars
@@ -199,7 +195,7 @@ def _pipeline_process_stage(api, workspace, stage, stage_name, logpath, envlogpa
                         if result_output:
                             logfp.write(result_output + "\n")
                             print(result_output)
-                        print(f"?={result.returncode}")
+                        print(f"{stage_name}?> {result.returncode}")
 
                 if stage_outboxes:
                     _stage_outbox_run(api, stage_name, stage_outboxes)
@@ -217,7 +213,7 @@ def _stage_outbox_run(api, stage, stage_outbox):
     stage_outbox_root = _get_stage_outbox_root(api, stage)
     mb_local_root = api.settings("local_root_relative")
     root_path = api.settings("workspace")
-    
+
     # Copy files into outbox
     logging.debug(f"outbox root={stage_outbox_root}")
 
@@ -225,13 +221,13 @@ def _stage_outbox_run(api, stage, stage_outbox):
 
     _exec_outbox_rules(
         mb_local_root=mb_local_root,
-        root_path=root_path,
+        workspace=root_path,
         outbox=stage_outbox,
         outboxes=outboxes
     )
 
 # todo(matthew): maybe instead of passing in mb_local_root, we pass in directories to ignore and add that to the list
-def _exec_outbox_rules(mb_local_root, root_path, outbox, outboxes):
+def _exec_outbox_rules(mb_local_root, workspace, outbox, outboxes):
     files_to_copy = {} # all the file copy rules
 
     for storage_id in outboxes:
@@ -241,9 +237,11 @@ def _exec_outbox_rules(mb_local_root, root_path, outbox, outboxes):
 
         target_path = outboxes[storage_id]
 
-        files_to_copy[storage_id] = []
+        files_to_copy[storage_id] = {}
 
         for rule in rules:
+            files_to_copy[storage_id][rule] = []
+
             source, destination = rule.split(PIPELINE_COPY_SEPARATOR)
             source = source.strip()
             destination = destination.strip()
@@ -261,11 +259,11 @@ def _exec_outbox_rules(mb_local_root, root_path, outbox, outboxes):
 
             # TODO(matthew): What about the case where we may want to grab
             #  something from a pulled in package?  Shouldn't always assume
-            #  searching from the root_path, but how to implement this?
+            #  searching from the workspace, but how to implement this?
             # Maybe do this format:
             #   "WORKSPACE: *.txt -> /docs/"
             #   "LUA: *.dll -> /external/lua/"
-            found_files = root_path.glob("**/" + source)
+            found_files = workspace.glob("**/" + source)
             mb_local_root_str = str(mb_local_root)
 
             for ffile in found_files:
@@ -283,23 +281,30 @@ def _exec_outbox_rules(mb_local_root, root_path, outbox, outboxes):
                 ffile_destination_path = Path.joinpath(target_path, destination, ffilename)
 
                 # copy file (or save it to a list to be copied later)
-                files_to_copy[storage_id].append(
-                    libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path)
+                files_to_copy[storage_id][rule].append(
+                    libmailcd.workflow.FileCopy(ffile_source_path, ffile_destination_path, rule=rule)
                 )
 
     if files_to_copy:
         #print(f"ftc={files_to_copy}")
         for sid in files_to_copy:
-            print(f"{sid}:")
+            logging.info(f"{sid}:")
             if files_to_copy[sid]:
-                for ftc in files_to_copy[sid]:
-                    # TODO(Matthew): Make this ftc.dst_relative output be a debug output, instead
-                    #  print how to access it via the generated root variable (example: MB_LIB_ROOT/lib/mylib.lib).
-                    print(f"- Copy {ftc.src_relative} => {ftc.dst_relative}")
-                    os.makedirs(ftc.dst_root, exist_ok=True)
-                    shutil.copy(ftc.src, ftc.dst)
+                for rule in rules:
+                    logging.info(f"- {rule}")
+                    files = files_to_copy[sid][rule]
+                    if files:
+                        for ftc in files:
+                            # TODO(Matthew): Make this ftc.dst_relative output be a debug output, instead
+                            #  print how to access it via the generated root variable (example: MB_LIB_ROOT/lib/mylib.lib).
+                            logging.info(f"-- Copy {ftc.src_relative} => {ftc.dst_relative}")
+                            os.makedirs(ftc.dst_root, exist_ok=True)
+                            shutil.copy(ftc.src, ftc.dst)
+                    else:
+                        logging.info("-- No matching files to copy")
+                        pass
             else:
-                print("- No matching files to copy")
+                logging.info("- No rules found")
 
 class StageTreeNode:
     def __init__(self, name):
@@ -390,7 +395,7 @@ def _get_stage_order_sequential(stages):
 
     return ordered_stages
 
-def pipeline_stages_run(api, workspace, pipeline_stages, logpath, env):
+def pipeline_stages_run(api, workspace, pipeline_stages, layout_logs, env):
     # TODO(Matthew): Should do a schema validation here (or up a level) first,
     #  so we can give line numbers for issues to the end user.
 
@@ -405,8 +410,9 @@ def pipeline_stages_run(api, workspace, pipeline_stages, logpath, env):
         stage_no = stage_no + 1
         #print(f"STAGE#{stage_no}: {stage_name}")
 
-        logfilepath = Path(logpath, f"{stage_name}{LOG_FILE_EXTENSION}")
-        envlogfilepath = Path(logpath, f"{stage_name}{ENV_LOG_FILE_EXTENSION}")
+        logfilepath = layout_logs.get_build_log_path(stage_name)
+
+        envlogfilepath = layout_logs.get_env_log_path(stage_name)
         _pipeline_process_stage(
             api,
             workspace,

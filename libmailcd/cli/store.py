@@ -18,7 +18,7 @@ def main_store(ctx):
 @click.argument("storage_id")
 @click.argument("package", type=click.Path(exists=True))  # can be zip or directory
 @click.pass_obj
-def main_store_add(api, storage_id, package):
+def main_store_add(obj, storage_id, package):
     """Add a PACKAGE (directory or zip file) to a specified location (STORAGE_ID).
 
     Example(s):
@@ -28,6 +28,8 @@ def main_store_add(api, storage_id, package):
         mb store add MYPACKAGE ./mypackage_v3/
 
     """
+    api = obj["api"]
+
     package_hash = api.store_add(storage_id, package)
     # TODO(matthew): we need the package hash here does storage.add return that?
     print(f"Package added under store '{storage_id}' ({package_hash})")
@@ -37,9 +39,11 @@ def main_store_add(api, storage_id, package):
 @click.argument("ref", default=None, required=False)
 @click.option("--label")
 @click.pass_obj
-def main_store_ls(api, ref, label):
+def main_store_ls(obj, ref, label):
     """Navigate around the package store.
     """
+    api = obj["api"]
+
     # Case: mb store
     #  Should show list of all storage IDs
     if not ref:
@@ -137,7 +141,7 @@ def main_store_ls(api, ref, label):
 @click.argument("ref")
 @click.argument("labels", nargs=-1)
 @click.pass_obj
-def main_store_get(api, ref, labels):
+def main_store_get(obj, ref, labels):
     """Get a PACKAGE from the specified REF, that have any of the specified LABELS.
 
     Example(s):
@@ -147,6 +151,8 @@ def main_store_get(api, ref, labels):
         mb store get MYPACKAGE best version ever
 
     """
+    api = obj["api"]
+
     try:
         storage_id, partial_package_hash = libmailcd.storage.split_ref(ref)
     except ValueError:

@@ -32,6 +32,8 @@ def main(ctx, workspace, debug):
     else:
         logging.basicConfig(level=logging.CRITICAL)
 
+    logger = logging.getLogger()
+
     # TODO(matthew): refactor this to not have to use get_artifact_storage_root()
     #  Maybe have an api.init()? And do all this inside there?
     settings = {}
@@ -70,4 +72,8 @@ def main(ctx, workspace, debug):
     api = libmailcd.api.API(default_api, custom_api=loaded_api)
     api.on_init()
 
-    ctx.obj = api
+    context = {}
+    context["api"] = api
+    context["logger"] = logger
+
+    ctx.obj = context

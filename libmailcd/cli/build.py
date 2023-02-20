@@ -11,34 +11,45 @@ import libmailcd.utils
 import libmailcd.workflow
 import libmailcd.env
 import libmailcd.pipeline
+from libmailcd.cli.common.path_manager import *
 from libmailcd.cli.common.workflow import pipeline_inbox_run
 from libmailcd.cli.common.workflow import pipeline_outbox_run
 from libmailcd.cli.common.workflow import pipeline_stages_run
 from libmailcd.cli.common.workflow import pipeline_set_env
 from libmailcd.cli.main import main
-from libmailcd.cli.common.constants import INSOURCE_PIPELINE_FILENAME
+
 
 ########################################
 
 @main.command("build")
 @click.pass_obj
-def main_build(api):
+def main_build(obj):
     exit_code = 0
+
+    api = obj["api"]
+    #logger = obj["logger"]
 
     try:
         workspace = api.settings("workspace")
         logging.debug(f"workspace: {workspace}")
 
-        pipeline_filepath_rel = Path(workspace, INSOURCE_PIPELINE_FILENAME)
-        pipeline_filepath = pipeline_filepath_rel.resolve()
+        layout = Layout(workspace, api)
+
+
+        pipeline_filepath = layout.pipeline
         logging.debug(f"pipeline_filepath: {pipeline_filepath}")
 
         if not pipeline_filepath.is_file():
-            raise ValueError(f"no pipeline found: {INSOURCE_PIPELINE_FILENAME} ({workspace})")
+            raise ValueError(f"no pipeline found: {pipeline_filepath.name} ({workspace})")
 
-        mb_env_path = api.settings("environment_root")
-        mb_outbox_path = api.settings("outbox_root")
-        mb_logs_build_path = api.settings("logs_build_root")
+        # TODO(Matthew): How do we get directories to not require the .root? Make the dirs a Path? or return a Path?
+        mb_env_path = layout.env.root
+        mb_outbox_path = layout.outbox.root
+        mb_logs_build_path = layout.logs.builds
+
+        logging.debug(f"mb_env_path={mb_env_path}")
+        logging.debug(f"mb_outbox_path={mb_outbox_path}")
+        logging.debug(f"mb_logs_build_path={mb_logs_build_path}")
 
         pipeline_dict = libmailcd.utils.load_yaml(pipeline_filepath)
         pipeline = libmailcd.pipeline.Pipeline.from_dict(pipeline_dict)
@@ -63,10 +74,9 @@ def main_build(api):
         #######################################
         #               INBOX                 #
         #######################################
-
         if pipeline.inbox:
             print(f"========== INBOX ==========")
-            mb_inbox_env_vars = pipeline_inbox_run(api, pipeline.inbox)
+            mb_inbox_env_vars = pipeline_inbox_run(layout.inbox, pipeline.inbox)
             show_footer = True
 
         #######################################
@@ -86,7 +96,7 @@ def main_build(api):
                 api,
                 workspace.resolve(),
                 pipeline.stages,
-                logpath=mb_logs_build_path,
+                layout_logs=layout.logs,
                 env=env_vars
             )
             show_footer = True
@@ -97,7 +107,7 @@ def main_build(api):
 
         if pipeline.outbox:
             print(f"========== OUTBOX ==========")
-            pipeline_outbox_run(api, pipeline.outbox)
+            pipeline_outbox_run(workspace, layout.outbox, pipeline.outbox)
             show_footer = True
 
         if show_footer:

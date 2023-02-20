@@ -20,7 +20,9 @@ def main_library():
 @main_library.command("ls")
 @click.argument("config", required=False)
 @click.pass_obj
-def main_library_ls(api, config):
+def main_library_ls(obj, config):
+    api = obj["api"]
+
     libraries = [ DEFAULT_LIBRARY_NAME ]
     library_root = Path(api.settings("library_root"))
     selected = None
@@ -58,7 +60,9 @@ def main_library_ls(api, config):
 @main_library.command("rm")
 @click.argument("library")
 @click.pass_obj
-def main_library_rm(api, library):
+def main_library_rm(obj, library):
+    api = obj["api"]
+
     library_name = library
     library_found = False
     library_root = Path(api.settings("library_root"))
@@ -88,7 +92,9 @@ def main_library_rm(api, library):
 @click.option("--name")
 @click.option("--ref")
 @click.pass_obj
-def main_library_add(api, url, name, ref):
+def main_library_add(obj, url, name, ref):
+    api = obj["api"]
+
     library_name = name
     if not library_name:
         library_name = libmailcd.library.url_to_name(url)
@@ -109,7 +115,9 @@ def main_library_add(api, url, name, ref):
 @main_library.command("select")
 @click.argument("library")
 @click.pass_obj
-def main_library_select(api, library):
+def main_library_select(obj, library):
+    api = obj["api"]
+
     library_name = library
     all_libraries = [ DEFAULT_LIBRARY_NAME ]
     library_found = False

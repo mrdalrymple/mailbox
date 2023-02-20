@@ -10,16 +10,18 @@ from libmailcd.cli.main import main
 
 @main.group("cred")
 @click.pass_obj
-def main_cred(api):
+def main_cred(obj):
     """Manages credentials.
     """
+    api = obj["api"]
     pass
 
 @main_cred.command("ls")
 @click.pass_obj
-def cred_ls(api):
+def cred_ls(obj):
     """List all credential IDs
     """
+    api = obj["api"]
     # Get all cred IDs
     cred_ids = api.cred_get_ids()
 
@@ -38,7 +40,8 @@ def cred_ls(api):
 @click.argument("password")
 @click.option("-f", "--force", "force", is_flag=True)
 @click.pass_obj
-def cred_set(api, cred_id, username, password, force):
+def cred_set(obj, cred_id, username, password, force):
+    api = obj["api"]
     if not force and api.cred_exists(cred_id):
         print(f"Cannot set credential: {cred_id} (already exists)")
         print(f'  (use the "--force" option to override)')

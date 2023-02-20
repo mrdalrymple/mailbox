@@ -12,12 +12,14 @@ from libmailcd.cli.common.constants import ENV_LOG_FILE_EXTENSION, LOG_FILE_EXTE
 @click.argument("log", default=None, required=False)
 @click.option("--env", "-e", is_flag=True, help="Display the environment instead of output.")
 @click.pass_obj
-def main_logs(api, log, env):
+def main_logs(obj, log, env):
     """View various logs
     
     Arguments:
         log {Path} -- Path to the log to view.
     """
+    api = obj["api"]
+
     # TODO(Matthew): I'm not happy with this code, however, it works and I don't know what to change.
 
     log_refs = []
