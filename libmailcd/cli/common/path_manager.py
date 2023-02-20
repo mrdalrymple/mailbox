@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from libmailcd.constants import LOCAL_MB_ROOT
@@ -59,9 +60,27 @@ class Logs:
     def root(self):
         return self._root
 
+    # NOTE(Matthew): Is 'builds' a necessary sub-category?
     @property
     def builds(self):
         return Path(self._root, LOCAL_MB_LOGS_BUILD_DIRNAME)
+
+    def get_stages(self):
+        stages = []
+
+        if self._root.exists():
+            if os.path.isdir(self._root):
+                raw_files = os.listdir(self._root)
+                for file in raw_files:
+                    stage = None
+                    if str(file).endswith(LOG_FILE_EXTENSION):
+                        stage = str(file)[:-len(LOG_FILE_EXTENSION)]
+                    #elif str(file).endswith(ENV_LOG_FILE_EXTENSION):
+                    #    stage = str(file)[:-len(ENV_LOG_FILE_EXTENSION)]
+                    if stage:
+                        stages.append(stage)
+
+        return stages
 
     def get_build_log_path(self, stage_name):
         return Path(self._root, f"{stage_name}{LOG_FILE_EXTENSION}")

@@ -1,6 +1,5 @@
 import logging
 import os
-from pathlib import Path
 import shutil
 import sys
 import traceback
@@ -11,7 +10,7 @@ import libmailcd.utils
 import libmailcd.workflow
 import libmailcd.env
 import libmailcd.pipeline
-from libmailcd.cli.common.path_manager import *
+from libmailcd.cli.common.path_manager import Layout
 from libmailcd.cli.common.workflow import pipeline_inbox_run
 from libmailcd.cli.common.workflow import pipeline_outbox_run
 from libmailcd.cli.common.workflow import pipeline_stages_run
@@ -32,7 +31,6 @@ def main_build(obj):
     try:
         workspace = api.settings("workspace")
         logging.debug(f"workspace: {workspace}")
-
         layout = Layout(workspace, api)
 
 
@@ -45,11 +43,11 @@ def main_build(obj):
         # TODO(Matthew): How do we get directories to not require the .root? Make the dirs a Path? or return a Path?
         mb_env_path = layout.env.root
         mb_outbox_path = layout.outbox.root
-        mb_logs_build_path = layout.logs.builds
+        mb_logs_path = layout.logs.root
 
         logging.debug(f"mb_env_path={mb_env_path}")
         logging.debug(f"mb_outbox_path={mb_outbox_path}")
-        logging.debug(f"mb_logs_build_path={mb_logs_build_path}")
+        logging.debug(f"mb_logs_path={mb_logs_path}")
 
         pipeline_dict = libmailcd.utils.load_yaml(pipeline_filepath)
         pipeline = libmailcd.pipeline.Pipeline.from_dict(pipeline_dict)
@@ -60,11 +58,9 @@ def main_build(obj):
             shutil.rmtree(mb_outbox_path)
 
         # TODO(matthew): Should we clean up the logs here? for now, yes...
-        if mb_logs_build_path.exists():
+        if mb_logs_path.exists():
             # TODO(matthew): what about the case where this isn't a directory?
-            shutil.rmtree(mb_logs_build_path)
-
-        mb_logs_build_path.mkdir(parents=True, exist_ok=True)
+            shutil.rmtree(mb_logs_path)
 
 
         show_footer = False
