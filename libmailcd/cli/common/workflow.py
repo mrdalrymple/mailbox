@@ -105,9 +105,6 @@ def pipeline_inbox_run(inbox_layout, pipeline_inbox):
 
     # Download all required packages
     if packages_to_download:
-        #mb_inbox_relpath = api.settings("inbox_root_relative")
-        #mb_inbox_path = api.settings("inbox_root")
-        mb_inbox_path = inbox_layout.root
 
         # TODO(matthew): Do we need to optimize this to only actually download ones we don't already have
         for package in packages_to_download:
@@ -116,18 +113,15 @@ def pipeline_inbox_run(inbox_layout, pipeline_inbox):
             print(f"Downloading package: {storage_id}/{package_hash}")
 
             # calculate target directory
-            #target_relpath = Path(mb_inbox_relpath, storage_id, package_hash)
-            target_path = Path(mb_inbox_path, target_relpath)
+            target_path = inbox_layout.get_package_path(storage_id, package_hash)
 
             # download to the target directory
             libmailcd.storage.download(storage_id, package_hash, target_path)
             print(f" --> '{target_path}'")
-            #print(f" --> '{target_relpath}'")
 
     # Set env variables that point to the inbox packages
     for package in inbox_packages:
         env_var_name = f"MB_{storage_id}_ROOT"
-        #env_var_value = str(target_relpath)
         env_var_value = str(target_path)
         env_vars[env_var_name] = env_var_value
 

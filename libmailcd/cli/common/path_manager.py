@@ -34,6 +34,12 @@ class Inbox:
     @property
     def root(self):
         return self._root
+    
+    def get_package_path(self, storage_id, package_hash):
+        '''
+        Get the path to the root of where a package should be located
+        '''
+        return Path(self._root, storage_id, package_hash)
 
 class Stages:
     def __init__(self, root):
