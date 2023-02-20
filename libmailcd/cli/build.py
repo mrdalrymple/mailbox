@@ -27,7 +27,7 @@ def main_build(obj):
     exit_code = 0
 
     api = obj["api"]
-    logger = obj["logger"]
+    #logger = obj["logger"]
 
     try:
         workspace = api.settings("workspace")
@@ -74,8 +74,6 @@ def main_build(obj):
         #######################################
         #               INBOX                 #
         #######################################
-        logger = logging.getLogger()
-
         if pipeline.inbox:
             print(f"========== INBOX ==========")
             mb_inbox_env_vars = pipeline_inbox_run(layout.inbox, pipeline.inbox)
