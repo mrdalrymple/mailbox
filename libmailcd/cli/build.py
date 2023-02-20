@@ -50,7 +50,6 @@ def main_build(obj):
         logging.debug(f"mb_env_path={mb_env_path}")
         logging.debug(f"mb_outbox_path={mb_outbox_path}")
         logging.debug(f"mb_logs_build_path={mb_logs_build_path}")
-        #return
 
         pipeline_dict = libmailcd.utils.load_yaml(pipeline_filepath)
         pipeline = libmailcd.pipeline.Pipeline.from_dict(pipeline_dict)
