@@ -20,7 +20,7 @@ from libmailcd.cli.main import main
 @click.pass_obj
 def main_clean(obj, env):
     """Cleans the mb files in the workspace.
-    
+
     Arguments:
         workspace {Path} -- Path to the workspace to clean.
         env {Bool} -- Clean the environment out as well.
@@ -72,19 +72,11 @@ def main_clean(obj, env):
                     ffile.unlink()
                     print(f"Removed custom file: {ffile_relpath}")
 
-        #local_mb_relpath = api.settings("local_root_relative")
-
-        #inbox_relpath = Path(local_mb_relpath, LOCAL_INBOX_DIRNAME)
-        #outbox_relpath = Path(local_mb_relpath, LOCAL_OUTBOX_DIRNAME)
-
-        #inbox_path = Path(workspace, inbox_relpath).resolve()
-        #outbox_path = Path(workspace, outbox_relpath).resolve()
-
         inbox_path = layout.inbox.root
         outbox_path = layout.outbox.root
         logs_path = layout.logs.root
         stages_path = layout.stages.root
-        
+
         if inbox_path.exists():
             shutil.rmtree(inbox_path)
             print(f"Removed local storage ({inbox_path})...")
@@ -102,8 +94,6 @@ def main_clean(obj, env):
             print(f"Removed local stages ({stages_path})...")
 
         if env:
-            #env_relpath = api.settings("environment_root_relative")
-            #env_path = api.settings("environment_root")
             env_path = layout.env.root
             if env_path.exists():
                 shutil.rmtree(env_path)
