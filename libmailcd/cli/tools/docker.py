@@ -44,22 +44,43 @@ def _images_from_output(output):
 import time
 
 def os_windows():
+    #logging.debug("DOCKER: OS WINDOWS SWITCH")
     res = _run_cmd([
         "C:\Program Files\Docker\Docker\dockercli.exe", # TODO(Matthew): need to detect where this is? or ask user to put it in path?
         "-SwitchWindowsEngine"
     ])
-
-    time.sleep(5) # TODO(Matthew): Need to find a way to query so we don't have to sleep
     #_print_result(res)
 
+    #logging.debug("DOCKER: OS WINDOWS SWITCH -- WAIT")
+    docker_wait_until_up()
+    #logging.debug("DOCKER: OS WINDOWS SWITCH -- OVER")
+
+
 def os_linux():
+    logging.debug("DOCKER: OS LINUX SWITCH")
     res = _run_cmd([
         "C:\Program Files\Docker\Docker\dockercli.exe",
         "-SwitchLinuxEngine"
     ])
-
-    time.sleep(5) # TODO(Matthew): Need to find a way to query so we don't have to sleep
     #_print_result(res)
+
+    #logging.debug("DOCKER: OS LINUX SWITCH -- WAIT")
+    docker_wait_until_up()
+    #logging.debug("DOCKER: OS LINUX SWITCH -- OVER")
+
+MAX_CHECK_FAILURES = 10  # TODO(Matthew): if this becomes an issue, move this up as a setting
+def docker_wait_until_up():
+    for _ in range(0, MAX_CHECK_FAILURES):
+        res_version = version()
+        if res_version.returncode == 0:
+            break
+        else:
+            #logging.debug(f"VERSION-RC: {res_version.returncode}")
+            pass
+        time.sleep(1)
+
+
+
 
 ##########################
 
@@ -98,6 +119,11 @@ def start(image, host_workspace, container_workspace, env):
         ]
     ))
     return result.stdout.strip()
+
+def version():
+    return _run_cmd([
+        "docker", "version"
+    ])
 
 def stop(handle):
     _run_cmd([
