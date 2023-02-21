@@ -19,10 +19,13 @@ from libmailcd.cli.main import main
 @click.option("--env", is_flag=True)
 @click.pass_obj
 def main_clean(obj, env):
-    """Cleans the mb files in the workspace.
+    """
+    Cleans the mb files in the workspace.
 
     Arguments:
+
         workspace {Path} -- Path to the workspace to clean.
+
         env {Bool} -- Clean the environment out as well.
     """
     exit_code = 0
