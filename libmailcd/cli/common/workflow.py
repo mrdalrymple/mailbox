@@ -160,6 +160,8 @@ def _pipeline_process_stage(api, workspace, stage, stage_name, logpath, envlogpa
 
     node = agent.factory(stage['node'], workspace, env)
 
+
+
     logpath = logpath.resolve()
     envlogpath = envlogpath.resolve()
     stage_steps = None
@@ -403,6 +405,10 @@ def pipeline_stages_run(api, workspace, pipeline_stages, layout_logs, env):
     ordered_stages = _get_stage_order_sequential(pipeline_stages)
     logging.debug(f"Stage Order: {ordered_stages}")
 
+    # Make the logs directory
+    # TODO(Matthew): Should we only create this on the fly on the first write to a log?
+    layout_logs.root.mkdir(exist_ok=True, parents=True)
+
     # TODO(Matthew): Should not just loop through and execute, need to build dependency tree
     stage_no = 0
     for stage_name in ordered_stages:
@@ -411,8 +417,8 @@ def pipeline_stages_run(api, workspace, pipeline_stages, layout_logs, env):
         #print(f"STAGE#{stage_no}: {stage_name}")
 
         logfilepath = layout_logs.get_build_log_path(stage_name)
-
         envlogfilepath = layout_logs.get_env_log_path(stage_name)
+
         _pipeline_process_stage(
             api,
             workspace,
