@@ -24,6 +24,7 @@ setup(
     install_requires=[
         'pyyaml',
         'click',
+        'docker'
         'pygit2',
         'yapsy',
         'keyring',

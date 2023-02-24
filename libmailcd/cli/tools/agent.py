@@ -2,6 +2,8 @@ import os
 import subprocess
 import logging
 
+from libmailcd.cli.common.exceptions import AppNotInstalledError
+from libmailcd.cli.common.exceptions import AppNotRunningError
 from libmailcd.cli.tools import docker
 from libmailcd.utils import hash_file
 
@@ -9,6 +11,7 @@ from libmailcd.constants import PIPELINE_CONTAINERFILE_SEPARATOR
 from libmailcd.constants import PIPELINE_CONTAINERFILE_OS_WINDOWS
 from libmailcd.constants import PIPELINE_CONTAINERFILE_OS_LINUX
 from libmailcd.constants import AGENT_CONTAINER_WORKSPACE
+
 
 ##########################
 
@@ -115,8 +118,10 @@ class LocalDockerWindowsNode(LocalDockerNode):
 def factory(node_dict, workspace, env):
     host_workspace = workspace
     if node_dict:
-        # This is getting gross, how to handle the docker cache system? Should not go into the library for sure.  Should be implemented at the cli / default API.  The whole node factory should be implemented by the cli.
+        # NOTE(Matthew): This is getting gross, how to handle the docker cache system? Should not go into the library for sure.
+        #  Should be implemented at the cli / default API.  The whole node factory should be implemented by the cli.
 
+        # Assumes Containerfile Scenario
         containerfile_ref = str(node_dict['containerfile'])
 
         containerfile = containerfile_ref
@@ -125,6 +130,14 @@ def factory(node_dict, workspace, env):
         # If the user specified the OS, use it instead of the default
         if PIPELINE_CONTAINERFILE_SEPARATOR in containerfile_ref:
             containerfile_os, containerfile = containerfile_ref.split(PIPELINE_CONTAINERFILE_SEPARATOR)
+
+        # Are the 3rd party tools that we require for this flow even installed?
+        #  So far just Docker
+        if not docker.is_installed():
+            raise AppNotInstalledError("docker")
+
+        if not docker.is_running():
+            raise AppNotRunningError("docker")
 
         # Should build container?
         container_hash = hash_file(containerfile)
@@ -146,7 +159,6 @@ def factory(node_dict, workspace, env):
         if container_hash not in found_images:
             print(f"Container not found, building '{containerfile_os}{PIPELINE_CONTAINERFILE_SEPARATOR}{containerfile}' ({container_hash})")
             docker.build(containerfile, container_hash, os=containerfile_os)
-            pass
 
         if containerfile_os == "windows":
             node = LocalDockerWindowsNode(container_hash, host_workspace, env)

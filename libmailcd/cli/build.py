@@ -10,6 +10,8 @@ import libmailcd.utils
 import libmailcd.workflow
 import libmailcd.env
 import libmailcd.pipeline
+from libmailcd.cli.common.exceptions import AppNotInstalledError
+from libmailcd.cli.common.exceptions import AppNotRunningError
 from libmailcd.cli.common.path_manager import Layout
 from libmailcd.cli.common.workflow import pipeline_inbox_run
 from libmailcd.cli.common.workflow import pipeline_outbox_run
@@ -118,6 +120,12 @@ def main_build(obj):
     except libmailcd.errors.StorageIdNotFoundError as e:
         print(f"{e}")
         exit_code = 1
+    except AppNotInstalledError as e:
+        print(f"Required application is not installed: {e.app}")
+        exit_code = 5
+    except AppNotRunningError as e:
+        print(f"Required application is not running: {e.app}")
+        exit_code = 6
     except ValueError as e:
         print(f"{e}")
         exit_code = 4

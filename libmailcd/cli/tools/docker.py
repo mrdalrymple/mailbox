@@ -1,5 +1,8 @@
+import shutil
 import subprocess
 import logging
+
+import docker
 
 def _print_result_(result):
     return result
@@ -79,6 +82,18 @@ def docker_wait_until_up():
             pass
         time.sleep(1)
 
+def is_installed():
+    which_docker = shutil.which("docker")
+    if which_docker is not None:
+        return True
+    return False
+
+def is_running():
+    try:
+        client = docker.from_env()
+        return client.ping()
+    except docker.errors.DockerException:
+        return False
 
 
 
