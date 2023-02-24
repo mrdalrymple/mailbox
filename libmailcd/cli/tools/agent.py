@@ -115,6 +115,15 @@ class LocalDockerWindowsNode(LocalDockerNode):
 
 ##########################
 
+def validate_dependencies_met():
+    # Are the 3rd party tools that we require for this flow even installed?
+    #  So far just Docker
+    if not docker.is_installed():
+        raise AppNotInstalledError("docker")
+
+    if not docker.is_running():
+        raise AppNotRunningError("docker")
+
 def factory(node_dict, workspace, env):
     host_workspace = workspace
     if node_dict:
@@ -130,14 +139,6 @@ def factory(node_dict, workspace, env):
         # If the user specified the OS, use it instead of the default
         if PIPELINE_CONTAINERFILE_SEPARATOR in containerfile_ref:
             containerfile_os, containerfile = containerfile_ref.split(PIPELINE_CONTAINERFILE_SEPARATOR)
-
-        # Are the 3rd party tools that we require for this flow even installed?
-        #  So far just Docker
-        if not docker.is_installed():
-            raise AppNotInstalledError("docker")
-
-        if not docker.is_running():
-            raise AppNotRunningError("docker")
 
         # Should build container?
         container_hash = hash_file(containerfile)

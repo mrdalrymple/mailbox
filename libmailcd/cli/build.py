@@ -17,6 +17,7 @@ from libmailcd.cli.common.workflow import pipeline_inbox_run
 from libmailcd.cli.common.workflow import pipeline_outbox_run
 from libmailcd.cli.common.workflow import pipeline_stages_run
 from libmailcd.cli.common.workflow import pipeline_set_env
+from libmailcd.cli.tools import agent
 from libmailcd.cli.main import main
 
 
@@ -41,6 +42,11 @@ def main_build(obj):
 
         if not pipeline_filepath.is_file():
             raise ValueError(f"no pipeline found: {pipeline_filepath.name} ({workspace})")
+
+        # NOTE(Matthew): I don't like the name of this or how it's exposed here
+        # I do like that it fails this first before parsing the pipeline
+        # Maybe that's bad? What if pipeline doesn't use docker, etc.?
+        agent.validate_dependencies_met()
 
         # TODO(Matthew): How do we get directories to not require the .root? Make the dirs a Path? or return a Path?
         mb_env_path = layout.env.root
