@@ -129,12 +129,19 @@ def main_build(obj):
     except AppNotInstalledError as e:
         print(f"Required application is not installed: {e.app}")
         if e.app == "docker":
-            print("\n Check out: https://www.docker.com/get-started/\n")
+            print()
+            print(" Install Docker Desktop and try again...")
+            print(" See: https://www.docker.com/get-started/")
+            print()
+            print(" If installed, make sure 'docker' is accessible via the PATH.")
+            print()
         exit_code = 5
     except AppNotRunningError as e:
         print(f"Required application is not running: {e.app}")
         if e.app == "docker":
-            print("\n Start Docker Desktop and try again...\n")
+            print()
+            print(" Start Docker Desktop and try again...")
+            print()
         exit_code = 6
     except ValueError as e:
         print(f"{e}")
