@@ -2,6 +2,8 @@ import shutil
 import subprocess
 import logging
 
+from pathlib import Path
+
 import docker
 
 def _print_result_(result):
@@ -48,8 +50,9 @@ import time
 
 def os_windows():
     #logging.debug("DOCKER: OS WINDOWS SWITCH")
+    docker_cli = docker_cli_path()
     res = _run_cmd([
-        "C:\Program Files\Docker\Docker\dockercli.exe", # TODO(Matthew): need to detect where this is? or ask user to put it in path?
+        f"{docker_cli}",
         "-SwitchWindowsEngine"
     ])
     #_print_result(res)
@@ -60,9 +63,10 @@ def os_windows():
 
 
 def os_linux():
-    logging.debug("DOCKER: OS LINUX SWITCH")
+    #logging.debug("DOCKER: OS LINUX SWITCH")
+    docker_cli = docker_cli_path()
     res = _run_cmd([
-        "C:\Program Files\Docker\Docker\dockercli.exe",
+        f"{docker_cli}",
         "-SwitchLinuxEngine"
     ])
     #_print_result(res)
@@ -95,6 +99,26 @@ def is_running():
     except docker.errors.DockerException:
         return False
 
+docker_install_root_cache = None
+def docker_install_location():
+    global docker_install_root_cache
+    if not docker_install_root_cache:
+        # Determine install root based on relative path to docker executable
+        docker_install_root_cache = Path(shutil.which("docker"))
+
+        # Example Windows Install: C:\Program Files\Docker\Docker\resources\bin\docker.EXE
+        docker_install_root_cache = docker_install_root_cache.parent.parent.parent
+        #  Return: C:\Program Files\Docker\Docker\
+
+    return docker_install_root_cache
+
+docker_cli_path_cache = None
+def docker_cli_path():
+    global docker_cli_path_cache
+    if not docker_cli_path_cache:
+        docker_root = docker_install_location()
+        docker_cli_path_cache = Path(docker_root, "dockercli.exe")
+    return docker_cli_path_cache
 
 
 ##########################
